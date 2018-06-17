@@ -2132,25 +2132,15 @@ function Render()
 
 	// Render gridlines
 
-	var A_Grid = Grid_Size * Zoom_Fctr;
-
-	for (var n = 0; n < Width / 2 + A_Grid; n += A_Grid)
-	{
-		Draw_Line(199, 199, 199, 1, 1, (Width / 2) + n - CamX % A_Grid, 0, (Width / 2) + n - CamX % A_Grid, Height);
-
-		if (n != 0)
-		{
-			Draw_Line(199, 199, 199, 1, 1, (Width / 2) - n - CamX % A_Grid, 0, (Width / 2) - n - CamX % A_Grid, Height);
+	var cell = Grid_Size * Zoom_Fctr;
+	for(var xpos = -CamX % cell + cell;xpos < Width;xpos += cell){
+		for(var i = 0;i < 2;i++){
+			Draw_Line(199, 199, 199, 1, 1, xpos, 0, xpos, Height);
 		}
 	}
-
-	for (var n = 0; n < Height / 2 + A_Grid; n += A_Grid)
-	{
-		Draw_Line(199, 199, 199, 1, 1, Width, (Height / 2) + n - CamY % A_Grid, 0, (Height / 2) + n - CamY % A_Grid);
-		
-		if (n != 0)
-		{
-			Draw_Line(199, 199, 199, 1, 1, Width, (Height / 2) - n - CamY % A_Grid, 0, (Height / 2) - n - CamY % A_Grid);
+	for(var ypos = -CamY % cell + cell;xpos < Height;xpos += cell){
+		for(var i = 0;i < 2;i++){
+			Draw_Line(199, 199, 199, 1, 1, 0, ypos, Width, ypos);
 		}
 	}
 
