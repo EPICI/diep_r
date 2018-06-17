@@ -2310,9 +2310,19 @@ function Render()
 			A_PLAYER[n].spawn,
 			A_PLAYER[n].injury
 		);
-
-		A_PLAYER[n].vx /= 1.05;
-		A_PLAYER[n].vy /= 1.05;
+		
+		var currentPlayer = A_PLAYER[n];
+		// Drag and friction
+		var DRAG_CONSTANT = 0.1;
+		var FRICTION_CONSTANT = 0.1;
+		var velocityMagnitude = Math.hypot(currentPlayer.vx,currentPlayer.vy);
+		var radius = (20.0 + (currentPlayer.level / 45) * 10.0);
+		var diameter = 2 * radius;
+		var multiplier = -(velocityMagnitude * diameter * DRAG_CONSTANT + FRICTION_CONSTANT / velocityMagnitude);
+		var ax = currentPlayer.vx * multiplier;
+		var ay = currentPlayer.vy * multiplier;
+		currentPlayer.vx += ax;
+		currentPlayer.vy += ay;
 		A_PLAYER[n].x += A_PLAYER[n].vx;
 		A_PLAYER[n].y += A_PLAYER[n].vy;
 		A_PLAYER[n].rotation += 1;
@@ -2362,19 +2372,19 @@ function Render()
 
 	if (KEYS[KL] == true)
 	{
-		A_PLAYER[At].vx += (-p_v - A_PLAYER[At].vx) * p_a;
+		A_PLAYER[At].vx += /*(-p_v - A_PLAYER[At].vx) * */p_a;
 	}
 	if (KEYS[KR] == true)
 	{
-		A_PLAYER[At].vx += (p_v - A_PLAYER[At].vx) * p_a;
+		A_PLAYER[At].vx += /*(p_v - A_PLAYER[At].vx) * */p_a;
 	}
 	if (KEYS[KD] == true)
 	{
-		A_PLAYER[At].vy += (p_v - A_PLAYER[At].vy) * p_a;
+		A_PLAYER[At].vy += /*(p_v - A_PLAYER[At].vy) * */p_a;
 	}
 	if (KEYS[KU] == true)
 	{
-		A_PLAYER[At].vy += (-p_v - A_PLAYER[At].vy) * p_a;
+		A_PLAYER[At].vy += /*(-p_v - A_PLAYER[At].vy) * */p_a;
 	}
 
 	// Draw menu overlay
