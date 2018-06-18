@@ -354,6 +354,7 @@ class GameObject{
     this.position = new Victor(0, 0);// Position vector
     this.velocity = new Victor(0, 0);// Velocity vector
     this.acceleration = new Victor(0, 0);// Acceleration vector
+    this.maxAcceleration = 0;// Tells outside code that when acceleration changes, it can't go bigger than this
     this.rotation = 0;// Rotation angle in radians
     this.type = 0;// Type code, says what kind of object this is
     this.score = 0;// Score/XP value
@@ -364,13 +365,13 @@ class GameObject{
     this.createdTime = 0;// Time when this object was created, TODO set this to now
     this.lastUpdated = 0;// When this object was last updated. Used to get the time delta for async processing.
   }
-  friendly(other){
+  isFriendly(other){
     // Bitmask for friendliness
     return (this.team & other.team) !== 0;
   }
   intersects(other){
     // Are they touching?
-    return this.position.subtract(other.position).magnitude() <= this.radius + other.radius;
+    return this.position.subtract(other.position).magnitude() <= this.getRadius() + other.getRadius();
   }
   collide(other,by){
     // We use the by argument to control the time step.
@@ -378,24 +379,24 @@ class GameObject{
     this.health -= other.damage*by;
     other.health -= this.damage*by;
   }
-  level(){
+  getLevel(){
     return upperBound(SCORE_LEVEL_TABLE,this.score);
   }
-  radius(){
+  getRadius(){
     // no modifiers yet
     return this.baseRadius;
   }
-  density(){
+  getDensity(){
     // no modifiers yet
     return this.baseDensity; 
   }
-  area(){
+  getArea(){
     // How big is this?
-    return Math.PI*Math.pow(this.radius(),2);
+    return Math.PI*Math.pow(this.getRadius(),2);
   }
-  mass(){
+  getMass(){
     // Get the mass, which is relevant for forces.
-    return this.area() * this.density();
+    return this.getArea() * this.getDensity();
   }
   update(currentTime){
     // Use lastUpdated to calculate amount of time passed. Then update this object.
