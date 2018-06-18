@@ -17,6 +17,34 @@ document.body.insertBefore(canvas, document.body.childNodes[0]);
 
 var context = canvas.getContext("2d");
 
+/**
+ * Return 0 <= i <= array.length such that !pred(array[i - 1]) && pred(array[i]).
+ */
+function binarySearch(array, pred) {
+    let lo = -1, hi = array.length;
+    while (1 + lo !== hi) {
+        const mi = lo + ((hi - lo) >> 1);
+        if (pred(array[mi])) {
+            hi = mi;
+        } else {
+            lo = mi;
+        }
+    }
+    return hi;
+}
+/**
+ * Return i such that array[i - 1] < item <= array[i].
+ */
+function lowerBound(array, item) {
+    return binarySearch(array, j => item <= j);
+}
+/**
+ * Return i such that array[i - 1] <= item < array[i].
+ */
+function upperBound(array, item) {
+    return binarySearch(array, j => item < j);
+}
+
 // Draw round rectangle.
 
 function Round_Rect(ctx, x, y, width, height, radius, fill, stroke) {
@@ -298,6 +326,92 @@ function Leaderboard_Entry(name, team, tank, score, percent)
 }
 
 var _LB = [];
+
+/**
+ * Get the score needed to reach a certain level.
+ * Note that this new curve is roughly 4x as much as the old curve.
+ */
+function levelScore(level){
+  // offset so level 1 is 0
+  level -= 1;
+  // base polynomial: p = x^3 + 3x^2 + 6x
+  var poly = ((level+3)*level+6)*level;
+  // no adjustment here
+  return poly;
+}
+var SCORE_LEVEL_TABLE = [-1];
+for(var i=1;i<=45;i++){
+  SCORE_LEVEL_TABLE.push(levelScore(i));
+}
+
+/**
+ * Base class for most interactable game objects.
+ */
+class GameObject{
+  constructor(){// Initialize blank
+    this.team = 0;// Friendliness bitmask
+    this.baseRadius = 0;// Radius multiplier
+    this.position = new Victor(0, 0);// Position vector
+    this.velocity = new Victor(0, 0);// Velocity vector
+    this.acceleration = new Victor(0, 0);// Acceleration vector
+    this.rotation = 0;// Rotation angle in radians
+    this.type = 0;// Type code, says what kind of object this is
+    this.score = 0;// Score/XP value
+    this.damage = 0;// Rate that this deals damage on contact
+    this.health = 1;// Current health of this object
+    this.maxhealth = 1;// Maximum health of this object
+    this.baseDensity = 0;// Density multiplier of this object
+    this.createdTime = 0;// Time when this object was created, TODO set this to now
+    this.lastUpdated = 0;// When this object was last updated. Used to get the time delta for async processing.
+  }
+  friendly(other){
+    // Bitmask for friendliness
+    return (this.team & other.team) !== 0;
+  }
+  intersects(other){
+    // Are they touching?
+    return this.position.subtract(other.position).magnitude() <= this.radius + other.radius;
+  }
+  collide(other,by){
+    // We use the by argument to control the time step.
+    by = Math.min(by, this.health/other.damage, other.health/this.damage);
+    this.health -= other.damage*by;
+    other.health -= this.damage*by;
+  }
+  level(){
+    return upperBound(SCORE_LEVEL_TABLE,this.score);
+  }
+  radius(){
+    // no modifiers yet
+    return this.baseRadius;
+  }
+  density(){
+    // no modifiers yet
+    return this.baseDensity; 
+  }
+  area(){
+    // How big is this?
+    return Math.PI*Math.pow(this.radius(),2);
+  }
+  mass(){
+    // Get the mass, which is relevant for forces.
+    return this.area() * this.density();
+  }
+  update(currentTime){
+    // Use lastUpdated to calculate amount of time passed. Then update this object.
+    // For most objects, this method should ignore them.
+    // For this object's children, this method should recursively call their update function.
+    // Make sure to update lastUpdated when done.
+    
+    // Subclasses override this.
+  }
+  draw(){
+    // Draw this object, if it is on screen.
+    // Graphics objects are in global variables so no parameters needed here.
+    
+    // Subclasses override this.
+  }
+}
 
 // This structure represents a player. It is passed in binary format to this client, the format is
 //
