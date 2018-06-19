@@ -19,6 +19,9 @@ public class Turret {
 	public double[] ys;
 	public double lastUpdated;
 	public double rotation;
+	public double spread;
+	public double spreadMul;
+	public int shots;
 	
 	// shot info
 	public double radius,radiusOver;
@@ -52,6 +55,9 @@ public class Turret {
 		density = 1;
 		controllable = false;
 		sides = 0;
+		spread = 0;
+		spreadMul = 1;
+		shots = 0;
 	}
 	
 	public static Turret copy(Turret source){
@@ -85,6 +91,9 @@ public class Turret {
 		density = source.density;
 		controllable = source.controllable;
 		sides = source.sides;
+		spread = source.spread;
+		spreadMul = source.spreadMul;
+		shots = source.shots;
 	}
 
 	public void update(double time){
@@ -105,9 +114,11 @@ public class Turret {
 					accumulator = accumulator-1;
 				}
 				GameObject bullet = makeShot(time,over);
+				bullet.parent = parent;
 				parent.velocity = parent.velocity.minus(bullet.velocity.times(bullet.mass/parent.mass));// recoil by Newton's equal and opposite law
 				parent.children.add(bullet);
-				parent.parent.objects.add(bullet);
+				parent.root.objects.add(bullet);
+				shots++;
 			}
 		}else{
 			// not trying to shoot
@@ -124,7 +135,7 @@ public class Turret {
 	}
 	
 	public void initShot(GameObject bullet,double time,double over){
-		double lrotation = parent.rotation+rotation;
+		double lrotation = parent.rotation+rotation+Math.PI*2*spread*Math.sin(Math.PI*2*spreadMul*shots);
 		double bspeed = parent.getBulletAccel();
 		Float64Vector rotate = GamePanel.polar(1, lrotation);
 		bullet.timeCreated = bullet.lastUpdated = time;

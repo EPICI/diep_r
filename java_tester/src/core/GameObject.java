@@ -8,7 +8,8 @@ import org.jscience.mathematics.number.*;
 
 public class GameObject {
 
-	public GamePanel parent;
+	public GamePanel root;
+	public GameObject parent;
 	public int team;
 	public double radius;
 	public Float64Vector position;
@@ -55,7 +56,7 @@ public class GameObject {
 	}
 	
 	public GameObject(){
-		parent = null;
+		root = null;
 		team = 0;
 		radius = 0;
 		position = Float64Vector.valueOf(0,0);

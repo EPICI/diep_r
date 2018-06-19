@@ -94,6 +94,38 @@ public class GamePanel extends JPanel {
 
 			@Override
 			public void keyReleased(KeyEvent event) {
+				int upgrade = -1;
+				switch(event.getKeyCode()){
+				case KeyEvent.VK_1:upgrade=0;break;
+				case KeyEvent.VK_2:upgrade=1;break;
+				case KeyEvent.VK_3:upgrade=2;break;
+				case KeyEvent.VK_4:upgrade=3;break;
+				case KeyEvent.VK_5:upgrade=4;break;
+				case KeyEvent.VK_6:upgrade=5;break;
+				case KeyEvent.VK_7:upgrade=6;break;
+				case KeyEvent.VK_8:upgrade=7;break;
+				case KeyEvent.VK_9:upgrade=8;break;
+				case KeyEvent.VK_U:{
+					// reset upgrades
+					Arrays.fill(player.stats, 0);
+					player.updateStats();
+					break;
+				}
+				case KeyEvent.VK_Y:{
+					// reset tank
+					initTank(player);
+					break;
+				}
+				}
+				if(upgrade>=0){
+					if(keys.get(KeyEvent.VK_ALT)){
+						// change class
+					}else{
+						// upgrade stat
+						player.stats[upgrade]++;
+						player.updateStats();
+					}
+				}
 				keys.clear(event.getKeyCode());
 				onKeyChange();
 			}
@@ -145,6 +177,15 @@ public class GamePanel extends JPanel {
 			int rypos = (int)ypos;
 			g.drawLine(0, rypos, width, rypos);
 		}
+		// stats
+		StringBuilder sb = new StringBuilder();
+		sb.append(player.stats[0]);
+		for(int i=1;i<8;i++){
+			sb.append("/");
+			sb.append(player.stats[i]);
+		}
+		g.setColor(Color.BLACK);
+		g.drawString(sb.toString(), 10, 30);
 		// render objects
 		g.translate(width*0.5, height*0.5);
 		g.scale(scale, scale);
@@ -192,13 +233,14 @@ public class GamePanel extends JPanel {
 	}
 	
 	public void initTank(GameObject tank){
-		tank.parent = this;
+		tank.root = this;
 		tank.team = 2;
 		tank.timeCreated = tank.lastUpdated = lastUpdated;
 		tank.controllable = true;
 		tank.updateProperties(true, true, true, true);
 		tank.updateStats();
 		Turret turret = new Turret();
+		tank.turrets.clear();
 		tank.turrets.add(turret);
 		turret.parent = tank;
 		turret.xs = new double[]{0,0,2,2};
