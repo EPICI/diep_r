@@ -124,8 +124,8 @@ public class GameObject {
 	public void updateStats(){
 		damage = 1+0.2*stats[2];
 		maxHealth = 1+level*0.04+stats[1]*0.4;
-		decay = -(0.1+0.1*stats[0])*maxHealth;
-		maxAcceleration = 60/(1+0.03*level)*(1+0.1*stats[7]);
+		decay = -(0.003+0.006*stats[0])*maxHealth;
+		maxAcceleration = 60*(1-0.015*level)*(1+0.1*stats[7]);
 	}
 	
 	public double getBulletAccel(){

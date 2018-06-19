@@ -13,7 +13,7 @@ public class GamePanel extends JPanel {
 	
 	public static final double DRAG_CONSTANT = 1;
 	public static final double FRICTION_CONSTANT = 1;
-	public static final double BOUNCE_CONSTANT = 50;
+	public static final double BOUNCE_CONSTANT = 20;
 	public static final double DAMAGE_CONSTANT = 5;
 	
 	public static final double ZOOM_TO = 80;
@@ -64,7 +64,7 @@ public class GamePanel extends JPanel {
 		objects = new ArrayList<>();
 		
 		player = new GameObject();
-		initTank(player);
+		Tank.initTank(GamePanel.this,player);
 		objects.add(player);
 		
 		addListeners();
@@ -144,7 +144,7 @@ public class GamePanel extends JPanel {
 				}
 				case KeyEvent.VK_Y:{
 					// reset tank
-					initTank(player);
+					Tank.initTank(GamePanel.this,player);
 					break;
 				}
 				case KeyEvent.VK_E:{
@@ -181,7 +181,14 @@ public class GamePanel extends JPanel {
 						// change class
 						if(player.subtype.equals("basic")){
 							switch(upgrade){
-							case 0:initSpammer(player);break;
+							case 0:Tank.initSpammer(player);break;
+							case 1:Tank.initHeavy(player);break;
+							case 2:Tank.initTriangle(player);break;
+							}
+						}else if(player.subtype.equals("spammer")){
+							switch(upgrade){
+							case 0:Tank.initTwin(player);break;
+							case 1:Tank.initTrishot(player);break;
 							}
 						}
 					}else{
@@ -334,56 +341,6 @@ public class GamePanel extends JPanel {
 	public static Float64Vector complexMultiply(Float64Vector a,Float64Vector b){
 		double ar = a.getValue(0), ai = a.getValue(1), br = b.getValue(0), bi = b.getValue(1);
 		return Float64Vector.valueOf(ar*br-ai*bi,ar*bi+ai*br);
-	}
-	
-	public void initTank(GameObject tank){
-		tank.type = "tank";
-		tank.subtype = "basic";
-		tank.root = this;
-		tank.team = 2<<random.nextInt(4);
-		tank.timeCreated = tank.lastUpdated = lastUpdated;
-		tank.controllable = true;
-		tank.updateProperties(true, true, true, true);
-		tank.updateStats();
-		tank.health = tank.maxHealth;
-		Turret turret = new Turret();
-		tank.turrets.clear();
-		tank.turrets.add(turret);
-		turret.parent = tank;
-		turret.lastUpdated = lastUpdated;
-		turret.multiplier = 1.6;
-		turret.radius = 0.5;
-		turret.velocity = Float64Vector.valueOf(10,0);
-		turret.acceleration = Float64Vector.valueOf(130,0);
-		turret.density = 1;
-		turret.damage = 1;
-		turret.health = 1;
-		turret.decay = 0.4;
-		turret.setShape(2, 1, 1);
-	}
-	
-	public void initSpammer(GameObject tank){
-		tank.subtype = "spammer";
-		tank.timeCreated = tank.lastUpdated = lastUpdated;
-		tank.controllable = true;
-		tank.updateProperties(true, true, true, true);
-		tank.updateStats();
-		Turret turret = new Turret();
-		tank.turrets.clear();
-		tank.turrets.add(turret);
-		turret.parent = tank;
-		turret.lastUpdated = lastUpdated;
-		turret.multiplier = 3.5;
-		turret.radius = 0.5;
-		turret.velocity = Float64Vector.valueOf(10,0);
-		turret.acceleration = Float64Vector.valueOf(130,0);
-		turret.density = 0.5;
-		turret.damage = 0.7;
-		turret.health = 0.7;
-		turret.decay = 0.4;
-		turret.spread = 1d/24;
-		turret.spreadMul = 2d/9;
-		turret.setShape(2, 1.5, 0.5);
 	}
 	
 }

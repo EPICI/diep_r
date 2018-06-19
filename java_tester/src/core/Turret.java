@@ -60,12 +60,24 @@ public class Turret {
 		shots = 0;
 	}
 	
+	public void setShape(double length,double width){
+		setShape(length,width,0);
+	}
 	public void setShape(double length,double width,double taper){
-		width /= 2;
-		double bwidth = width*taper;
+		setShape(length,width,taper,0);
+	}
+	public void setShape(double length,double width,double taper,double offset){
+		setShape(length,width,taper,offset,offset);
+	}
+	public void setShape(double length,double width,double taper,double backofs,double frontofs){
+		width *= 0.5;
+		double fwidth = width;
+		double bwidth = width;
+		if(taper>0)fwidth *= 1-taper;
+		if(taper<0)bwidth *= 1+taper;
 		xs = new double[]{0,0,length,length};
-		ys = new double[]{bwidth,-bwidth,-width,width};
-		position = Float64Vector.valueOf(length-radius,0);
+		ys = new double[]{backofs+bwidth,backofs-bwidth,frontofs-fwidth,frontofs+fwidth};
+		position = Float64Vector.valueOf(length-radius,frontofs);
 	}
 	
 	public static Turret copy(Turret source){
@@ -84,12 +96,16 @@ public class Turret {
 		xs = source.xs;
 		ys = source.ys;
 		lastUpdated = source.lastUpdated;
+		rotation = source.rotation;
+		spread = source.spread;
+		spreadMul = source.spreadMul;
+		shots = source.shots;
 		radius = source.radius;
 		radiusOver = source.radiusOver;
-		position = source.velocity;
+		position = source.position;
 		velocity = source.velocity;
-		velocityOver = source.velocityOver;
 		acceleration = source.acceleration;
+		velocityOver = source.velocityOver;
 		accelerationOver = source.accelerationOver;
 		damage = source.damage;
 		damageOver = source.damageOver;
@@ -99,9 +115,6 @@ public class Turret {
 		density = source.density;
 		controllable = source.controllable;
 		sides = source.sides;
-		spread = source.spread;
-		spreadMul = source.spreadMul;
-		shots = source.shots;
 	}
 
 	public void update(double time){
@@ -143,6 +156,7 @@ public class Turret {
 	}
 	
 	public void initShot(GameObject bullet,double time,double over){
+		double scale = parent.radius;
 		double protation = parent.rotation+rotation;
 		double lrotation = protation+Math.PI*2*spread*Math.sin(Math.PI*2*spreadMul*shots);
 		double bspeed = parent.getBulletAccel();
@@ -151,8 +165,8 @@ public class Turret {
 		bullet.timeCreated = bullet.lastUpdated = time;
 		bullet.team = parent.team;
 		bullet.colorOverride = parent.colorOverride;
-		bullet.radius = radius+radiusOver*over;
-		bullet.position = GamePanel.complexMultiply(protate, position).times(parent.radius).plus(parent.position);
+		bullet.radius = (radius+radiusOver*over)*scale;
+		bullet.position = GamePanel.complexMultiply(protate, position).times(scale).plus(parent.position);
 		bullet.velocity = GamePanel.complexMultiply(lrotate, velocity).times(1+velocityOver*over).plus(parent.velocity);
 		bullet.acceleration = GamePanel.complexMultiply(lrotate, acceleration).times((1+accelerationOver*over)*bspeed);
 		bullet.maxAcceleration = bullet.acceleration.normValue();
@@ -173,6 +187,7 @@ public class Turret {
 		double scale = parent.radius;
 		g.translate(parent.position.getValue(0), parent.position.getValue(1));
 		g.rotate(rotation+parent.rotation);
+		g.translate(-0.2*Math.max(0, delay-accumulator), 0);
 		ColorSet colors = ColorSet.forTeam(1);
 		int sides = xs.length;
 		Path2D.Double path = new Path2D.Double();
