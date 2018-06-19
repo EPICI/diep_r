@@ -90,6 +90,15 @@ public class GameObject {
 		colorOverride = null;
 	}
 	
+	public void setFireKey(boolean fireKey){
+		this.fireKey=fireKey;
+		if(fireKey==true){
+			for(Turret turret:turrets){
+				turret.accumulator = Math.min(turret.accumulator, turret.cap);
+			}
+		}
+	}
+	
 	public boolean intersects(GameObject other){
 		Float64Vector diff = position.minus(other.position);
 		return diff.normValue() < radius+other.radius;
@@ -99,15 +108,18 @@ public class GameObject {
 		return (team & other.team)!=0;
 	}
 	
-	public void collide(GameObject other,double dtime){
+	public void push(GameObject other,double dtime){
 		Float64Vector diff = position.minus(other.position);
-		diff = GamePanel.directionOf(diff).times(GamePanel.BOUNCE_CONSTANT);
+		diff = GamePanel.directionOf(diff).times(GamePanel.BOUNCE_CONSTANT*Math.pow(radius+other.radius-diff.normValue(),2)*dtime);
+		velocity = velocity.plus(diff.times(1d/mass));
+		other.velocity = other.velocity.plus(diff.times(-1d/other.mass));
+	}
+	
+	public void collide(GameObject other,double dtime){
 		dtime = Math.min(dtime, Math.min(health/other.damage, other.health/damage));
 		double aloss = other.damage*dtime*GamePanel.DAMAGE_CONSTANT, bloss = damage*dtime*GamePanel.DAMAGE_CONSTANT;
 		health -= aloss;
 		other.health -= bloss;
-		velocity = velocity.plus(diff.times(aloss/mass));
-		other.velocity = other.velocity.plus(diff.times(-bloss/other.mass));
 		if(health<GamePanel.EPS)killedby(other);
 		if(other.health<GamePanel.EPS)other.killedby(this);
 	}

@@ -13,7 +13,7 @@ public class GamePanel extends JPanel {
 	
 	public static final double DRAG_CONSTANT = 1;
 	public static final double FRICTION_CONSTANT = 1;
-	public static final double BOUNCE_CONSTANT = 20;
+	public static final double BOUNCE_CONSTANT = 1000;
 	public static final double DAMAGE_CONSTANT = 5;
 	
 	public static final double ZOOM_TO = 80;
@@ -90,14 +90,14 @@ public class GamePanel extends JPanel {
 			public void mousePressed(MouseEvent event) {
 				requestFocusInWindow();
 				//System.out.println("Mouse down");
-				player.fireKey = true;
+				player.setFireKey(true);
 				player.altFire = event.getButton()!=MouseEvent.BUTTON1;
 			}
 
 			@Override
 			public void mouseReleased(MouseEvent event) {
 				//System.out.println("Mouse up");
-				player.fireKey = false;
+				player.setFireKey(false);
 				player.altFire = false;
 			}
 			
@@ -149,7 +149,7 @@ public class GamePanel extends JPanel {
 				}
 				case KeyEvent.VK_E:{
 					// temporary auto fire
-					player.fireKey = true;
+					player.setFireKey(true);
 					break;
 				}
 				case KeyEvent.VK_K:{
@@ -294,7 +294,10 @@ public class GamePanel extends JPanel {
 				if(blist!=null){
 					for(GameObject first:alist){
 						for(GameObject second:blist){
-							if(!first.friendly(second) && first.intersects(second))first.collide(second, dtime);
+							if(first.intersects(second)){
+								first.push(second, dtime);
+								if(!first.friendly(second))first.collide(second, dtime);
+							}
 						}
 					}
 				}

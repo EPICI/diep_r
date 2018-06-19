@@ -141,9 +141,6 @@ public class Turret {
 				parent.root.objects.add(bullet);
 				shots++;
 			}
-		}else{
-			// not trying to shoot
-			accumulator = Math.min(accumulator, cap);
 		}
 		// update lastUpdated
 		lastUpdated = time;
