@@ -13,12 +13,35 @@ public class GamePanel extends JPanel {
 	
 	public static final double DRAG_CONSTANT = 1;
 	public static final double FRICTION_CONSTANT = 1;
+	public static final double BOUNCE_CONSTANT = 50;
+	public static final double DAMAGE_CONSTANT = 5;
 	
 	public static final double ZOOM_TO = 80;
 	
 	public static final double STROKE_WIDTH = 0.15;
 	
-	public static final double FADE_AT = 0.1;
+	public static final double FADE_AT = 0.05;
+	
+	public static final double CELL_SIZE = 4;
+	public static final double CELL_MUL = 1d/CELL_SIZE;
+	private static final Float64Vector[] CELL_NEXT = {
+			Float64Vector.valueOf(0,1),
+			Float64Vector.valueOf(1,1),
+			Float64Vector.valueOf(1,0),
+			Float64Vector.valueOf(1,-1),
+	};
+	
+	private static final String[] INSTRUCTIONS = {
+			"1-9 to upgrade",
+			"Alt 1-9 to change class",
+			"U to reset upgrades",
+			"Y to reset class",
+			"E to auto fire",
+			"K to level up",
+			"Alt K for +100k score",
+			"I to toggle info",
+			"O to suicide",
+	};
 	
 	public double lastUpdated;
 	
@@ -27,8 +50,16 @@ public class GamePanel extends JPanel {
 	public GameObject player;
 	
 	public BitSet keys;
+	
+	public Random random;
+	
+	public boolean showInfo = true;
 
 	public GamePanel(){
+		setPreferredSize(new Dimension(1280,720));
+		
+		random = new Random();
+		
 		lastUpdated = 0;
 		objects = new ArrayList<>();
 		
@@ -116,10 +147,43 @@ public class GamePanel extends JPanel {
 					initTank(player);
 					break;
 				}
+				case KeyEvent.VK_E:{
+					// temporary auto fire
+					player.fireKey = true;
+					break;
+				}
+				case KeyEvent.VK_K:{
+					if(keys.get(KeyEvent.VK_ALT)){
+						// +100k
+						player.score += 100000;
+					}else{
+						// level up
+						player.score = Math.max(player.score, GameObject.levelToScore(player.level+1));
+					}
+					player.updateProperties(true, true, true, true);
+					player.updateStats();
+					break;
+				}
+				case KeyEvent.VK_I:{
+					// show infos
+					showInfo = !showInfo;
+					break;
+				}
+				case KeyEvent.VK_O:{
+					// suicide
+					player.score = 0;
+					player.health = -1;
+					break;
+				}
 				}
 				if(upgrade>=0){
 					if(keys.get(KeyEvent.VK_ALT)){
 						// change class
+						if(player.subtype.equals("basic")){
+							switch(upgrade){
+							case 0:initSpammer(player);break;
+							}
+						}
 					}else{
 						// upgrade stat
 						player.stats[upgrade]++;
@@ -185,7 +249,13 @@ public class GamePanel extends JPanel {
 			sb.append(player.stats[i]);
 		}
 		g.setColor(Color.BLACK);
-		g.drawString(sb.toString(), 10, 30);
+		g.drawString(sb.toString(), 10, 20);
+		g.drawString("Level: "+player.level, 10, 40);
+		g.drawString("Score: "+player.score, 10, 60);
+		g.drawString("Health: "+player.health+" / "+player.maxHealth, 10, 80);
+		for(int i=0;i<INSTRUCTIONS.length;i++){
+			g.drawString(INSTRUCTIONS[i], 10, height-20*(INSTRUCTIONS.length-i));
+		}
 		// render objects
 		g.translate(width*0.5, height*0.5);
 		g.scale(scale, scale);
@@ -197,14 +267,48 @@ public class GamePanel extends JPanel {
 	}
 	
 	public void update(double time){
+		HashMap<Float64Vector,ArrayList<GameObject>> cells = new HashMap<>();
 		double dtime = time - lastUpdated;
 		for(int i=0;i<objects.size();i++){
 			GameObject obj = objects.get(i);
 			obj.update(time);
+			Float64Vector cell = Float64Vector.valueOf(Math.floor(obj.position.getValue(0)),Math.floor(obj.position.getValue(1)));
+			ArrayList<GameObject> list = cells.get(cell);
+			if(list==null){
+				cells.put(cell, list=new ArrayList<>());
+			}
+			list.add(obj);
+		}
+		for(Float64Vector acell:cells.keySet()){
+			ArrayList<GameObject> alist = cells.get(acell);
+			for(Float64Vector offset:CELL_NEXT){
+				Float64Vector bcell = acell.plus(offset);
+				ArrayList<GameObject> blist = cells.get(bcell);
+				if(blist!=null){
+					for(GameObject first:alist){
+						for(GameObject second:blist){
+							if(!first.friendly(second) && first.intersects(second))first.collide(second, dtime);
+						}
+					}
+				}
+			}
 		}
 		for(int i=objects.size()-1;i>=0;i--){
 			GameObject obj = objects.get(i);
-			if(obj.health<EPS)objects.remove(i);
+			if(obj.health<EPS || obj.position.minus(player.position).normValue()>100)objects.remove(i);
+		}
+		if(!objects.contains(player)){
+			objects.add(player);
+			player.health = player.maxHealth;
+			player.position = Float64Vector.valueOf(random.nextDouble()*2-1,random.nextDouble()*2-1).times(20);
+		}
+		while(objects.size()<500){
+			double t = Math.PI*2*random.nextDouble();
+			double u = random.nextDouble()+random.nextDouble();
+			double r = Math.min(2-u, u);
+			GameObject polygon = player.spawnShape(random.nextDouble());
+			polygon.position = player.position.plus(polar(r*100,t));
+			objects.add(polygon);
 		}
 		lastUpdated = time;
 	}
@@ -224,7 +328,7 @@ public class GamePanel extends JPanel {
 	}
 	
 	public static Float64Vector polar(double mag,double ang){
-		return Float64Vector.valueOf(mag*Math.cos(ang),mag*Math.sin(ang));
+		return Float64Vector.valueOf(Math.cos(ang),Math.sin(ang)).times(mag);
 	}
 	
 	public static Float64Vector complexMultiply(Float64Vector a,Float64Vector b){
@@ -233,8 +337,33 @@ public class GamePanel extends JPanel {
 	}
 	
 	public void initTank(GameObject tank){
+		tank.type = "tank";
+		tank.subtype = "basic";
 		tank.root = this;
-		tank.team = 2;
+		tank.team = 2<<random.nextInt(4);
+		tank.timeCreated = tank.lastUpdated = lastUpdated;
+		tank.controllable = true;
+		tank.updateProperties(true, true, true, true);
+		tank.updateStats();
+		tank.health = tank.maxHealth;
+		Turret turret = new Turret();
+		tank.turrets.clear();
+		tank.turrets.add(turret);
+		turret.parent = tank;
+		turret.lastUpdated = lastUpdated;
+		turret.multiplier = 1.6;
+		turret.radius = 0.5;
+		turret.velocity = Float64Vector.valueOf(10,0);
+		turret.acceleration = Float64Vector.valueOf(130,0);
+		turret.density = 1;
+		turret.damage = 1;
+		turret.health = 1;
+		turret.decay = 0.4;
+		turret.setShape(2, 1, 1);
+	}
+	
+	public void initSpammer(GameObject tank){
+		tank.subtype = "spammer";
 		tank.timeCreated = tank.lastUpdated = lastUpdated;
 		tank.controllable = true;
 		tank.updateProperties(true, true, true, true);
@@ -243,17 +372,18 @@ public class GamePanel extends JPanel {
 		tank.turrets.clear();
 		tank.turrets.add(turret);
 		turret.parent = tank;
-		turret.xs = new double[]{0,0,2,2};
-		turret.ys = new double[]{0.5,-0.5,-0.5,0.5};
 		turret.lastUpdated = lastUpdated;
-		turret.multiplier = 1.6;
+		turret.multiplier = 3.5;
 		turret.radius = 0.5;
-		turret.position = Float64Vector.valueOf(1.5,0);
 		turret.velocity = Float64Vector.valueOf(10,0);
-		turret.acceleration = Float64Vector.valueOf(1,0);
-		turret.damage = 1;
-		turret.health = 1;
-		turret.decay = 5;
+		turret.acceleration = Float64Vector.valueOf(130,0);
+		turret.density = 0.5;
+		turret.damage = 0.7;
+		turret.health = 0.7;
+		turret.decay = 0.4;
+		turret.spread = 1d/24;
+		turret.spreadMul = 2d/9;
+		turret.setShape(2, 1.5, 0.5);
 	}
 	
 }

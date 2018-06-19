@@ -36,6 +36,9 @@ public class GameObject {
 	public boolean controllable;
 	public boolean fireKey;
 	public boolean altFire;
+	public String type;
+	public String subtype;
+	public ColorSet colorOverride;
 	
 	private static final int[] LEVEL_SCORE = new int[46];
 	
@@ -82,25 +85,59 @@ public class GameObject {
 		controllable = false;
 		fireKey = false;
 		altFire = false;
+		type = "";
+		subtype = "";
+		colorOverride = null;
+	}
+	
+	public boolean intersects(GameObject other){
+		Float64Vector diff = position.minus(other.position);
+		return diff.normValue() < radius+other.radius;
+	}
+	
+	public boolean friendly(GameObject other){
+		return (team & other.team)!=0;
+	}
+	
+	public void collide(GameObject other,double dtime){
+		Float64Vector diff = position.minus(other.position);
+		diff = GamePanel.directionOf(diff).times(GamePanel.BOUNCE_CONSTANT);
+		dtime = Math.min(dtime, Math.min(health/other.damage, other.health/damage));
+		double aloss = other.damage*dtime*GamePanel.DAMAGE_CONSTANT, bloss = damage*dtime*GamePanel.DAMAGE_CONSTANT;
+		health -= aloss;
+		other.health -= bloss;
+		velocity = velocity.plus(diff.times(aloss/mass));
+		other.velocity = other.velocity.plus(diff.times(-bloss/other.mass));
+		if(health<GamePanel.EPS)killedby(other);
+		if(other.health<GamePanel.EPS)other.killedby(this);
+	}
+	
+	public void killedby(GameObject other){
+		while(other.parent!=null)other = other.parent;// propagate kill credit
+		if(!other.type.equals("tank"))return;
+		other.score += Math.min(score, levelToScore(45));
+		score = 0;
+		other.updateProperties(true, true, true, true);
+		other.updateStats();
 	}
 	
 	public void updateStats(){
-		damage = 30+6*stats[2];
-		maxHealth = 50+level*2+stats[1]*20;
-		decay = -(0.03+0.12*stats[0])*maxHealth;
-		maxAcceleration = 30+8*stats[7];
+		damage = 1+0.2*stats[2];
+		maxHealth = 1+level*0.04+stats[1]*0.4;
+		decay = -(0.1+0.1*stats[0])*maxHealth;
+		maxAcceleration = 60/(1+0.03*level)*(1+0.1*stats[7]);
 	}
 	
 	public double getBulletAccel(){
-		return 130+50*stats[3];
+		return 1+0.4*stats[3];
 	}
 	
 	public double getBulletHealth(){
-		return 8+6*stats[4];
+		return 1+0.2*stats[4];
 	}
 	
 	public double getBulletDamage(){
-		return 7+3*stats[5];
+		return 1+0.5*stats[5];
 	}
 	
 	public double getReload(){
@@ -113,9 +150,15 @@ public class GameObject {
 
 	public void updateProperties(boolean doLevel,boolean doRadius,boolean doArea,boolean doMass){
 		if(doLevel)level = scoreToLevel(score);
-		if(doRadius)radius = 1+0.013636*level;
+		if(doRadius)radius = 1+0.01*level;
 		if(doArea)area = Math.PI*radius*radius;
 		if(doMass)mass = area*density;
+	}
+	
+	public GamePanel getRoot(){
+		GameObject current = this;
+		while(current.parent!=null)current = current.parent;
+		return current.root;
 	}
 	
 	public void update(double time){
@@ -150,6 +193,7 @@ public class GameObject {
 	}
 	
 	public void draw(Graphics2D g){
+		GamePanel root = getRoot();
 		/*
 		// draw children first
 		for(GameObject obj:children){
@@ -161,7 +205,7 @@ public class GameObject {
 			turret.draw((Graphics2D)g.create());
 		}
 		// colors
-		ColorSet colors = ColorSet.forTeam(team);
+		ColorSet colors = colorOverride!=null?colorOverride:ColorSet.forTeam(team);
 		double xpos = position.getValue(0), ypos = position.getValue(1), radius = this.radius;
 		Shape shape;
 		if(sides<3){
@@ -171,8 +215,8 @@ public class GameObject {
 			double[] xs = new double[sides];
 			double[] ys = new double[sides];
 			for(int i=0;i<sides;i++,angle+=ainc){
-				xs[i] = Math.cos(angle);
-				ys[i] = Math.sin(angle);
+				xs[i] = xpos+Math.cos(angle);
+				ys[i] = ypos+Math.sin(angle);
 			}
 			Path2D.Double path;
 			shape = path = new Path2D.Double();
@@ -194,6 +238,54 @@ public class GameObject {
 		g.setColor(borderCol);
 		g.setStroke(new BasicStroke((float)GamePanel.STROKE_WIDTH));
 		g.draw(shape);
+		if(root.showInfo && health<maxHealth){
+			// health bar
+			double x1 = xpos-radius, x2 = xpos+radius, y = ypos-radius*1.3;
+			g.setColor(ColorSet.HEALTH_OUTER);
+			g.draw(new Line2D.Double(x1, y, x2, y));
+			g.setColor(ColorSet.HEALTH_INNER);
+			g.draw(new Line2D.Double(x1, y, x1+(x2-x1)*health/maxHealth, y));
+		}
+	}
+	
+	public GameObject spawnShape(double roll){
+		Random random = root.random;
+		GameObject result = new GameObject();
+		result.root = getRoot();
+		result.type = "shape";
+		result.team = 1;
+		result.acceleration = GamePanel.polar(1, Math.PI*2*random.nextDouble());
+		result.rotation = Math.PI*2*random.nextDouble();
+		result.density = 0.2;
+		result.timeCreated = result.lastUpdated = lastUpdated;
+		if(roll<0.05){// pentagon
+			result.sides = 5;
+			result.subtype = "pentagon";
+			result.score = 500;
+			result.damage = 1.5;
+			result.health = result.maxHealth = 2;
+			result.colorOverride = ColorSet.SHAPE_PENTAGON;
+			result.radius = 1.5;
+		}else if(roll<0.2){// triangle
+			result.sides = 3;
+			result.subtype = "triangle";
+			result.score = 100;
+			result.damage = 1;
+			result.health = result.maxHealth = 1;
+			result.colorOverride = ColorSet.SHAPE_TRIANGLE;
+			result.radius = 1;
+		}else{// square
+			result.sides = 4;
+			result.subtype = "square";
+			result.score = 40;
+			result.damage = 1;
+			result.health = result.maxHealth = 0.2;
+			result.colorOverride = ColorSet.SHAPE_SQUARE;
+			result.radius = 1;
+		}
+		result.decay = result.health * -0.03;
+		result.updateProperties(false, false, true, true);
+		return result;
 	}
 	
 }

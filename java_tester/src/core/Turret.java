@@ -60,6 +60,14 @@ public class Turret {
 		shots = 0;
 	}
 	
+	public void setShape(double length,double width,double taper){
+		width /= 2;
+		double bwidth = width*taper;
+		xs = new double[]{0,0,length,length};
+		ys = new double[]{bwidth,-bwidth,-width,width};
+		position = Float64Vector.valueOf(length-radius,0);
+	}
+	
 	public static Turret copy(Turret source){
 		if(source==null)return null;
 		Turret result = new Turret();
@@ -135,15 +143,18 @@ public class Turret {
 	}
 	
 	public void initShot(GameObject bullet,double time,double over){
-		double lrotation = parent.rotation+rotation+Math.PI*2*spread*Math.sin(Math.PI*2*spreadMul*shots);
+		double protation = parent.rotation+rotation;
+		double lrotation = protation+Math.PI*2*spread*Math.sin(Math.PI*2*spreadMul*shots);
 		double bspeed = parent.getBulletAccel();
-		Float64Vector rotate = GamePanel.polar(1, lrotation);
+		Float64Vector protate = GamePanel.polar(1, protation);
+		Float64Vector lrotate = GamePanel.polar(1, lrotation);
 		bullet.timeCreated = bullet.lastUpdated = time;
 		bullet.team = parent.team;
+		bullet.colorOverride = parent.colorOverride;
 		bullet.radius = radius+radiusOver*over;
-		bullet.position = GamePanel.complexMultiply(rotate, position).plus(parent.position);
-		bullet.velocity = GamePanel.complexMultiply(rotate, velocity).times(1+velocityOver*over).plus(parent.velocity);
-		bullet.acceleration = GamePanel.complexMultiply(rotate, acceleration).times((1+accelerationOver*over)*bspeed);
+		bullet.position = GamePanel.complexMultiply(protate, position).times(parent.radius).plus(parent.position);
+		bullet.velocity = GamePanel.complexMultiply(lrotate, velocity).times(1+velocityOver*over).plus(parent.velocity);
+		bullet.acceleration = GamePanel.complexMultiply(lrotate, acceleration).times((1+accelerationOver*over)*bspeed);
 		bullet.maxAcceleration = bullet.acceleration.normValue();
 		bullet.rotation = lrotation;
 		bullet.sides = 0;
@@ -153,18 +164,21 @@ public class Turret {
 		bullet.decay = decay;
 		bullet.density = density;
 		bullet.controllable = controllable;
+		bullet.type = "shot";
+		bullet.subtype = "bullet";
 		bullet.updateProperties(false, false, true, true);
 	}
 
 	public void draw(Graphics2D g){
+		double scale = parent.radius;
 		g.translate(parent.position.getValue(0), parent.position.getValue(1));
 		g.rotate(rotation+parent.rotation);
 		ColorSet colors = ColorSet.forTeam(1);
 		int sides = xs.length;
 		Path2D.Double path = new Path2D.Double();
-		path.moveTo(xs[0], ys[0]);
+		path.moveTo(xs[0]*scale, ys[0]*scale);
 		for(int i=1;i<sides;i++){
-			path.lineTo(xs[i], ys[i]);
+			path.lineTo(xs[i]*scale, ys[i]*scale);
 		}
 		path.closePath();
 		g.setColor(colors.fill);
