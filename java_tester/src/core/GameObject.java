@@ -8,11 +8,13 @@ import org.jscience.mathematics.number.*;
 
 public class GameObject {
 
+	public GamePanel parent;
 	public int team;
 	public double radius;
 	public Float64Vector position;
 	public Float64Vector velocity;
 	public Float64Vector acceleration;
+	public Float64Vector aim;
 	public double maxAcceleration;
 	public double rotation;
 	public int sides;
@@ -53,11 +55,13 @@ public class GameObject {
 	}
 	
 	public GameObject(){
+		parent = null;
 		team = 0;
 		radius = 0;
 		position = Float64Vector.valueOf(0,0);
 		velocity = Float64Vector.valueOf(0,0);
 		acceleration = Float64Vector.valueOf(0,0);
+		aim = Float64Vector.valueOf(0,0);
 		maxAcceleration = 0;
 		rotation = 0;
 		sides = 0;
@@ -78,6 +82,33 @@ public class GameObject {
 		fireKey = false;
 		altFire = false;
 	}
+	
+	public void updateStats(){
+		damage = 30+6*stats[2];
+		maxHealth = 50+level*2+stats[1]*20;
+		decay = -(0.03+0.12*stats[0])*maxHealth;
+		maxAcceleration = 30+8*stats[7];
+	}
+	
+	public double getBulletAccel(){
+		return 130+50*stats[3];
+	}
+	
+	public double getBulletHealth(){
+		return 8+6*stats[4];
+	}
+	
+	public double getBulletDamage(){
+		return 7+3*stats[5];
+	}
+	
+	public double getReload(){
+		return 1+0.13*stats[6];
+	}
+	
+	public void updateAim(){
+		rotation = Math.atan2(aim.getValue(1), aim.getValue(0));
+	}
 
 	public void updateProperties(boolean doLevel,boolean doRadius,boolean doArea,boolean doMass){
 		if(doLevel)level = scoreToLevel(score);
@@ -88,12 +119,14 @@ public class GameObject {
 	
 	public void update(double time){
 		double dtime = time - lastUpdated;
+		/*
 		// update children
 		for(int i=children.size()-1;i>=0;i--){
 			GameObject obj = children.get(i);
 			obj.update(time);
 			if(obj.health<GamePanel.EPS)children.remove(i);
 		}
+		*/
 		// update physics
 		double velocityMag = velocity.normValue();
 		Float64Vector laccel = acceleration;
@@ -103,16 +136,28 @@ public class GameObject {
 		}
 		velocity = velocity.plus(laccel.times(dtime));
 		position = position.plus(velocity.times(dtime));
+		//System.out.println(laccel+" "+velocity+" "+position);
+		// update turrets
+		for(Turret turret:turrets){
+			turret.update(time);
+		}
 		// update health
 		health -= decay*dtime;
+		health = Math.min(health, maxHealth);
 		// update lastUpdated
 		lastUpdated = time;
 	}
 	
 	public void draw(Graphics2D g){
+		/*
 		// draw children first
 		for(GameObject obj:children){
-			obj.draw(g);
+			obj.draw((Graphics2D)g.create());
+		}
+		*/
+		// draw turrets
+		for(Turret turret:turrets){
+			turret.draw((Graphics2D)g.create());
 		}
 		// colors
 		ColorSet colors = ColorSet.forTeam(team);
@@ -136,9 +181,16 @@ public class GameObject {
 			}
 			path.closePath();
 		}
-		g.setColor(colors.fill);
+		Color fillCol = colors.fill, borderCol = colors.border;
+		if(!controllable){
+			double alpha = Math.min(1, Math.max(0, 
+					health/(maxHealth*GamePanel.FADE_AT)
+					));
+			g.setComposite(AlphaComposite.SrcOver.derive((float)alpha));
+		}
+		g.setColor(fillCol);
 		g.fill(shape);
-		g.setColor(colors.border);
+		g.setColor(borderCol);
 		g.setStroke(new BasicStroke((float)GamePanel.STROKE_WIDTH));
 		g.draw(shape);
 	}

@@ -10,7 +10,7 @@ public class Main {
 	public static JFrame frame;
 	public static GamePanel panel;
 	
-	public static final long FRAME_MS = 100;
+	public static final long FRAME_MS = 33;
 
 	public static void main(String[] args) {
 		frame = new JFrame("diep.io remake");
