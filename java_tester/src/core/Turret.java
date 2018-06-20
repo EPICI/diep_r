@@ -22,6 +22,7 @@ public class Turret {
 	public double spread;
 	public double spreadMul;
 	public int shots;
+	public int limit;
 	
 	// shot info
 	public double radius,radiusOver;
@@ -35,6 +36,8 @@ public class Turret {
 	public double density;
 	public boolean controllable;
 	public int sides;
+	public double spin;
+	public double spinDecay;
 	
 	public Turret(){
 		parent = null;
@@ -58,6 +61,9 @@ public class Turret {
 		spread = 0;
 		spreadMul = 1;
 		shots = 0;
+		spin = 0;
+		spinDecay = 0;
+		limit = 1<<30;
 	}
 	
 	public void setShape(double length,double width){
@@ -115,31 +121,40 @@ public class Turret {
 		density = source.density;
 		controllable = source.controllable;
 		sides = source.sides;
+		spin = source.spin;
+		spinDecay = source.spinDecay;
+		limit = source.limit;
 	}
 
 	public void update(double time){
 		double dtime = time - lastUpdated;
 		// do the cycle
 		boolean ready = accumulator>=delay;//was it already able to shoot?
-		accumulator += dtime*multiplier*parent.getReload();
+		double inc = Math.max(0, 1-(double)parent.children.size()/limit)*dtime*multiplier*parent.getReload();
+		accumulator += inc;
 		//System.out.println("accumulator: "+accumulator);
 		if(parent.fireKey){
 			// trying to shoot
-			if(accumulator>=delay){
+			if(accumulator>=delay && inc>GamePanel.EPS){
+				double ftime;
 				double over;
 				if(ready){
+					ftime = 0;
 					over = accumulator-delay;
 					accumulator = delay-1;
 				}else{
+					ftime = (accumulator-delay)/multiplier;
 					over = 0;
 					accumulator = accumulator-1;
 				}
 				GameObject bullet = makeShot(time,over);
+				bullet.timeCreated = bullet.lastUpdated = time-ftime;
 				bullet.parent = parent;
 				parent.velocity = parent.velocity.minus(bullet.velocity.times(bullet.mass/parent.mass));// recoil by Newton's equal and opposite law
 				parent.children.add(bullet);
 				parent.root.objects.add(bullet);
 				shots++;
+				bullet.update(time);
 			}
 		}
 		// update lastUpdated
@@ -159,16 +174,15 @@ public class Turret {
 		double bspeed = parent.getBulletAccel();
 		Float64Vector protate = GamePanel.polar(1, protation);
 		Float64Vector lrotate = GamePanel.polar(1, lrotation);
-		bullet.timeCreated = bullet.lastUpdated = time;
 		bullet.team = parent.team;
 		bullet.colorOverride = parent.colorOverride;
 		bullet.radius = (radius+radiusOver*over)*scale;
 		bullet.position = GamePanel.complexMultiply(protate, position).times(scale).plus(parent.position);
-		bullet.velocity = GamePanel.complexMultiply(lrotate, velocity).times(1+velocityOver*over).plus(parent.velocity);
+		bullet.velocity = GamePanel.complexMultiply(lrotate, velocity).times((1+velocityOver*over)*bspeed*bspeed).plus(parent.velocity);
 		bullet.acceleration = GamePanel.complexMultiply(lrotate, acceleration).times((1+accelerationOver*over)*bspeed);
 		bullet.maxAcceleration = bullet.acceleration.normValue();
 		bullet.rotation = lrotation;
-		bullet.sides = 0;
+		bullet.sides = sides;
 		bullet.score = 0;
 		bullet.damage = (damage+damageOver*over)*parent.getBulletDamage();
 		bullet.health = bullet.maxHealth = (health+healthOver*over)*parent.getBulletHealth();
@@ -177,6 +191,8 @@ public class Turret {
 		bullet.controllable = controllable;
 		bullet.type = "shot";
 		bullet.subtype = "bullet";
+		bullet.spin = spin;
+		bullet.spinDecay = spinDecay;
 		bullet.updateProperties(false, false, true, true);
 	}
 

@@ -11,7 +11,7 @@ public class Main {
 	public static GamePanel panel;
 	
 	public static final long FRAME_MS = 11;
-	public static final int UPDATE_EVERY = 3;
+	public static final int RENDER_EVERY = 3;
 
 	public static void main(String[] args) {
 		frame = new JFrame("diep.io remake");
@@ -28,7 +28,7 @@ public class Main {
 			GamePanel.sleep(FRAME_MS);
 			panel.update((System.nanoTime()-start)/1e9d);
 			counter++;
-			if(counter==UPDATE_EVERY){
+			if(counter==RENDER_EVERY){
 				counter=0;
 				panel.repaint();
 			}

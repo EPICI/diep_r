@@ -39,6 +39,10 @@ public class GameObject {
 	public String type;
 	public String subtype;
 	public ColorSet colorOverride;
+	public double spin;
+	public double spinDecay;
+	public double lastHit;
+	public double droneCounter;
 	
 	private static final int[] LEVEL_SCORE = new int[46];
 	
@@ -88,6 +92,10 @@ public class GameObject {
 		type = "";
 		subtype = "";
 		colorOverride = null;
+		spin = 0;
+		spinDecay = 0;
+		lastHit = 0;
+		droneCounter = 1;
 	}
 	
 	public void setFireKey(boolean fireKey){
@@ -120,6 +128,7 @@ public class GameObject {
 		double aloss = other.damage*dtime*GamePanel.DAMAGE_CONSTANT, bloss = damage*dtime*GamePanel.DAMAGE_CONSTANT;
 		health -= aloss;
 		other.health -= bloss;
+		lastHit = other.lastHit = lastUpdated;
 		if(health<GamePanel.EPS)killedby(other);
 		if(other.health<GamePanel.EPS)other.killedby(this);
 	}
@@ -135,8 +144,8 @@ public class GameObject {
 	
 	public void updateStats(){
 		damage = 1+0.2*stats[2];
-		maxHealth = 1+level*0.04+stats[1]*0.4;
-		decay = -(0.003+0.006*stats[0])*maxHealth;
+		density = maxHealth = 1+level*0.04+stats[1]*0.4;
+		decay = -0.001*(1+2*stats[0])*maxHealth;
 		maxAcceleration = 60*(1-0.015*level)*(1+0.1*stats[7]);
 	}
 	
@@ -157,7 +166,7 @@ public class GameObject {
 	}
 	
 	public void updateAim(){
-		rotation = Math.atan2(aim.getValue(1), aim.getValue(0));
+		rotation = GamePanel.angleOf(aim);
 	}
 
 	public void updateProperties(boolean doLevel,boolean doRadius,boolean doArea,boolean doMass){
@@ -175,15 +184,26 @@ public class GameObject {
 	
 	public void update(double time){
 		double dtime = time - lastUpdated;
-		/*
 		// update children
-		for(int i=children.size()-1;i>=0;i--){
-			GameObject obj = children.get(i);
-			obj.update(time);
-			if(obj.health<GamePanel.EPS)children.remove(i);
+		double accelFirst = turrets.isEmpty()?1:turrets.get(0).acceleration.normValue()*getBulletAccel();
+		double droneCounter = this.droneCounter;
+		for(GameObject child:children){
+			if(child.controllable){
+				child.maxAcceleration = accelFirst*this.droneCounter/droneCounter;
+				Float64Vector point = GamePanel.directionOf(aim.plus(position).minus(child.position));
+				child.aim = child.acceleration = point.times(child.maxAcceleration*(altFire?-1:1));
+				child.updateAim();
+				droneCounter += 1;
+			}
 		}
-		*/
+		children.retainAll(new HashSet<>(getRoot().objects));
 		// update physics
+		if(Math.abs(spin)>GamePanel.EPS){
+			double spinBy = spin*dtime;
+			spin -= spinBy*spinDecay;
+			rotation += spinBy;
+			acceleration = GamePanel.complexMultiply(GamePanel.polar(1, spinBy), acceleration);
+		}
 		double velocityMag = velocity.normValue();
 		Float64Vector laccel = acceleration;
 		if(velocityMag>GamePanel.EPS){
@@ -198,7 +218,10 @@ public class GameObject {
 			turret.update(time);
 		}
 		// update health
-		health -= decay*dtime;
+		double ldecay = decay;
+		if(parent!=null && parent.health<GamePanel.EPS)ldecay = maxHealth;
+		if(ldecay<0)ldecay *= Math.exp((time-lastHit)*0.1);
+		health -= ldecay*dtime;
 		health = Math.min(health, maxHealth);
 		// update lastUpdated
 		lastUpdated = time;

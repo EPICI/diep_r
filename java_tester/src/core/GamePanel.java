@@ -16,13 +16,11 @@ public class GamePanel extends JPanel {
 	public static final double BOUNCE_CONSTANT = 1000;
 	public static final double DAMAGE_CONSTANT = 5;
 	
-	public static final double ZOOM_TO = 80;
-	
 	public static final double STROKE_WIDTH = 0.15;
 	
 	public static final double FADE_AT = 0.05;
 	
-	public static final double CELL_SIZE = 4;
+	public static final double CELL_SIZE = 8;
 	public static final double CELL_MUL = 1d/CELL_SIZE;
 	private static final Float64Vector[] CELL_NEXT = {
 			Float64Vector.valueOf(0,1),
@@ -41,13 +39,21 @@ public class GamePanel extends JPanel {
 			"Alt K for +100k score",
 			"I to toggle info",
 			"O to suicide",
+			"T to change team",
+			"L to spawn opponent",
+			"Shift L to spawn boss opponent",
+			"Alt L to kill opponent",
+			"H for rapid healing",
 	};
 	
 	public double lastUpdated;
 	
 	public ArrayList<GameObject> objects;
+	public ArrayList<GameObject> objToAdd;
 	
 	public GameObject player;
+	
+	public GameObject opponent;
 	
 	public BitSet keys;
 	
@@ -62,9 +68,11 @@ public class GamePanel extends JPanel {
 		
 		lastUpdated = 0;
 		objects = new ArrayList<>();
+		objToAdd = new ArrayList<>();
 		
 		player = new GameObject();
 		Tank.initTank(GamePanel.this,player);
+		player.team = 2;
 		objects.add(player);
 		
 		addListeners();
@@ -175,6 +183,49 @@ public class GamePanel extends JPanel {
 					player.health = -1;
 					break;
 				}
+				case KeyEvent.VK_T:{
+					// team rotate
+					player.team <<= 1;
+					if(player.team>16)player.team = 2;
+					break;
+				}
+				case KeyEvent.VK_H:{
+					// rapid healing
+					player.lastHit -= 60;
+					break;
+				}
+				case KeyEvent.VK_L:{
+					if(opponent!=null)opponent.health = -1;
+					if(keys.get(KeyEvent.VK_ALT)){
+						opponent = null;
+					}else{
+						boolean boss = keys.get(KeyEvent.VK_SHIFT);
+						// make opponent
+						GameObject opponent = GamePanel.this.opponent = new GameObject();
+						opponent.team = boss?1:player.team;
+						while(opponent.team==player.team){
+							opponent.team = 2<<random.nextInt(4);
+						}
+						int pts = boss?70:player.level;
+						int lim = boss?10:7;
+						while(pts>0){
+							int i = random.nextInt(8);
+							int inc = random.nextInt(1+Math.min(pts, lim-opponent.stats[i]));
+							pts -= inc;
+							opponent.stats[i] += inc;
+						}
+						opponent.score = player.score;
+						opponent.health = opponent.maxHealth;
+						opponent.position = player.position.plus(polar(0.6*zoomTo(player),Math.PI*2*random.nextDouble()));
+						opponent.acceleration = directionOf(player.position.minus(opponent.position)).times(opponent.maxAcceleration);
+						opponent.aim = directionOf(player.position.minus(opponent.position));
+						opponent.updateAim();
+						Tank.initTank(GamePanel.this, opponent);
+						Tank.initTank(GamePanel.this, opponent, -1);
+						objToAdd.add(opponent);
+					}
+					break;
+				}
 				}
 				if(upgrade>=0){
 					if(keys.get(KeyEvent.VK_ALT)){
@@ -191,9 +242,21 @@ public class GamePanel extends JPanel {
 							case 1:Tank.initTrishot(player);break;
 							case 2:Tank.initQuad(player);break;
 							}
+						}else if(player.subtype.equals("heavy")){
+							switch(upgrade){
+							case 0:Tank.initDestroyer(player);break;
+							case 1:Tank.initSniper(player);break;
+							case 2:Tank.initTrapper(player);break;
+							}
+						}else if(player.subtype.equals("triangle")){
+							switch(upgrade){
+							case 0:Tank.initBooster(player);break;
+							case 1:Tank.initOverlord(player);break;
+							}
 						}else if(player.subtype.equals("twin")){
 							switch(upgrade){
 							case 0:Tank.initTriplet(player);break;
+							case 1:Tank.initStream(player);break;
 							}
 						}
 					}else{
@@ -216,7 +279,7 @@ public class GamePanel extends JPanel {
 	public void onMouseMove(int mousex,int mousey){
 		//System.out.println("Mouse moved to ("+mousex+", "+mousey+")");
 		int width = getWidth(), height = getHeight();
-		double scale = Math.hypot(width, height)/ZOOM_TO;
+		double scale = getScale();
 		double aimx = (mousex-width*0.5)/scale, aimy = (mousey-height*0.5)/scale;
 		player.aim = Float64Vector.valueOf(aimx,aimy);
 		player.updateAim();
@@ -231,12 +294,25 @@ public class GamePanel extends JPanel {
 		player.acceleration = move.times(player.maxAcceleration);
 	}
 	
+	public static double zoomTo(GameObject tank){
+		double result = 80+0.5*tank.level;
+		switch(tank.subtype){
+		case "sniper":result*=1.1;break;
+		}
+		return result;
+	}
+	
+	public double getScale(){
+		int width = getWidth(), height = getHeight();
+		return Math.hypot(width, height)/zoomTo(player);
+	}
+	
 	@Override
 	public void paint(Graphics og){
 		// fetch
 		Graphics2D g = (Graphics2D) og;
 		int width = getWidth(), height = getHeight();
-		double scale = Math.hypot(width, height)/ZOOM_TO;
+		double scale = getScale();
 		double camx = player.position.getValue(0);
 		double camy = player.position.getValue(1);
 		// rendering hints
@@ -262,9 +338,15 @@ public class GamePanel extends JPanel {
 		}
 		g.setColor(Color.BLACK);
 		g.drawString(sb.toString(), 10, 20);
-		g.drawString("Level: "+player.level, 10, 40);
-		g.drawString("Score: "+player.score, 10, 60);
-		g.drawString("Health: "+player.health+" / "+player.maxHealth, 10, 80);
+		double dps = 0;
+		for(Turret turret:player.turrets){
+			dps += turret.damage*turret.health*turret.multiplier;
+		}
+		dps *= player.getBulletDamage()*player.getBulletHealth()*player.getReload();
+		g.drawString("DPS: "+dps, 10, 40);
+		g.drawString("Level: "+player.level, 10, 60);
+		g.drawString("Score: "+player.score, 10, 80);
+		g.drawString("Health: "+player.health+" / "+player.maxHealth, 10, 100);
 		for(int i=0;i<INSTRUCTIONS.length;i++){
 			g.drawString(INSTRUCTIONS[i], 10, height-20*(INSTRUCTIONS.length-i));
 		}
@@ -279,6 +361,9 @@ public class GamePanel extends JPanel {
 	}
 	
 	public void update(double time){
+		ArrayList<GameObject> oldObjToAdd = objToAdd;
+		objToAdd = new ArrayList<>();
+		objects.addAll(oldObjToAdd);
 		HashMap<Float64Vector,ArrayList<GameObject>> cells = new HashMap<>();
 		double dtime = time - lastUpdated;
 		for(int i=0;i<objects.size();i++){
@@ -310,19 +395,36 @@ public class GamePanel extends JPanel {
 		}
 		for(int i=objects.size()-1;i>=0;i--){
 			GameObject obj = objects.get(i);
-			if(obj.health<EPS || obj.position.minus(player.position).normValue()>100)objects.remove(i);
+			if(obj.health<EPS || obj.position.minus(player.position).normValue()>(obj.type.equals("tank")?500:100)){
+				obj.health = -1;
+				objects.remove(i);
+			}
+		}
+		if(!objects.contains(opponent)){
+			opponent = null;
+		}else{
+			Float64Vector otp = player.position.minus(opponent.position);
+			double otpm = otp.normValue();
+			double ozt = zoomTo(opponent)*0.5;
+			opponent.acceleration = otpm>30?otp.times(opponent.maxAcceleration/otpm):complexMultiply(polar(1,(random.nextDouble()*2-1)*dtime),opponent.acceleration);
+			if(otpm<ozt){
+				opponent.aim = otp;
+				opponent.updateAim();
+			}
+			if(otpm<ozt && !opponent.fireKey){
+				opponent.setFireKey(true);
+			}else if(otpm>ozt*1.5 && opponent.fireKey){
+				opponent.setFireKey(false);
+			}
 		}
 		if(!objects.contains(player)){
 			objects.add(player);
 			player.health = player.maxHealth;
-			player.position = Float64Vector.valueOf(random.nextDouble()*2-1,random.nextDouble()*2-1).times(20);
+			player.position = randomCircle().times(50);
 		}
-		while(objects.size()<500){
-			double t = Math.PI*2*random.nextDouble();
-			double u = random.nextDouble()+random.nextDouble();
-			double r = Math.min(2-u, u);
+		while(objects.size()<300){
 			GameObject polygon = player.spawnShape(random.nextDouble());
-			polygon.position = player.position.plus(polar(r*100,t));
+			polygon.position = player.position.plus(randomCircle().times(100));
 			objects.add(polygon);
 		}
 		lastUpdated = time;
@@ -334,6 +436,17 @@ public class GamePanel extends JPanel {
 		}catch(InterruptedException exception){
 			
 		}
+	}
+	
+	public Float64Vector randomCircle(){
+		double t = Math.PI*2*random.nextDouble();
+		double u = random.nextDouble()+random.nextDouble();
+		double r = Math.min(2-u, u);
+		return polar(r,t);
+	}
+	
+	public static double angleOf(Float64Vector vec){
+		return Math.atan2(vec.getValue(1), vec.getValue(0));
 	}
 	
 	public static Float64Vector directionOf(Float64Vector vec){
