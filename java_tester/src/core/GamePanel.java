@@ -12,7 +12,7 @@ public class GamePanel extends JPanel {
 	public static final double EPS = 1e-12d;
 	
 	public static final double DRAG_CONSTANT = 1;
-	public static final double FRICTION_CONSTANT = 1;
+	public static final double FRICTION_CONSTANT = 10;
 	public static final double BOUNCE_CONSTANT = 1000;
 	public static final double DAMAGE_CONSTANT = 5;
 	
@@ -189,6 +189,11 @@ public class GamePanel extends JPanel {
 							switch(upgrade){
 							case 0:Tank.initTwin(player);break;
 							case 1:Tank.initTrishot(player);break;
+							case 2:Tank.initQuad(player);break;
+							}
+						}else if(player.subtype.equals("twin")){
+							switch(upgrade){
+							case 0:Tank.initTriplet(player);break;
 							}
 						}
 					}else{

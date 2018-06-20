@@ -147,4 +147,59 @@ public class Tank extends GameObject {
 		turret.rotation = -turret.rotation;
 	}
 	
+	public static void initQuad(GameObject tank){
+		tank.subtype = "quad";
+		Turret turret = new Turret();
+		tank.turrets.clear();
+		tank.turrets.add(turret);
+		turret.parent = tank;
+		turret.lastUpdated = tank.lastUpdated;
+		turret.multiplier = 1.6;
+		turret.radius = 0.5;
+		turret.velocity = Float64Vector.valueOf(5,0);
+		turret.acceleration = Float64Vector.valueOf(130,0);
+		turret.density = 1;
+		turret.damage = 0.8;
+		turret.health = 0.8;
+		turret.decay = 0.4;
+		turret.setShape(2, 1);
+		turret = Turret.copy(turret);
+		tank.turrets.add(0,turret);
+		turret.rotation = Math.PI;
+		turret = Turret.copy(turret);
+		tank.turrets.add(0,turret);
+		turret.rotation = Math.PI/2;
+		turret.delay = 0.5;
+		turret = Turret.copy(turret);
+		tank.turrets.add(0,turret);
+		turret.rotation = -Math.PI/2;
+	}
+	
+	public static void initTriplet(GameObject tank){
+		tank.subtype = "triplet";
+		Turret turret = new Turret();
+		tank.turrets.clear();
+		tank.turrets.add(turret);
+		turret.parent = tank;
+		turret.lastUpdated = tank.lastUpdated;
+		turret.multiplier = 1.6;
+		turret.radius = 0.5;
+		turret.velocity = Float64Vector.valueOf(10,0);
+		turret.acceleration = Float64Vector.valueOf(130,0);
+		turret.density = 0.5;
+		turret.damage = 0.6;
+		turret.health = 0.6;
+		turret.decay = 0.4;
+		turret.setShape(2, 1);
+		turret = Turret.copy(turret);
+		tank.turrets.add(0,turret);
+		turret.velocity = Float64Vector.valueOf(7,-7);
+		turret.delay = 0.9;
+		turret.setShape(1.6, 1.6, 0, 0, -0.5);
+		turret = Turret.copy(turret);
+		tank.turrets.add(0,turret);
+		turret.velocity = Float64Vector.valueOf(7,7);
+		turret.setShape(1.6, 1.6, 0, 0, 0.5);
+	}
+	
 }

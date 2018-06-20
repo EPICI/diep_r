@@ -266,9 +266,9 @@ public class GameObject {
 		result.root = getRoot();
 		result.type = "shape";
 		result.team = 1;
-		result.acceleration = GamePanel.polar(1, Math.PI*2*random.nextDouble());
+		result.acceleration = GamePanel.polar(GamePanel.FRICTION_CONSTANT, Math.PI*2*random.nextDouble());
 		result.rotation = Math.PI*2*random.nextDouble();
-		result.density = 0.2;
+		result.density = 2;
 		result.timeCreated = result.lastUpdated = lastUpdated;
 		if(roll<0.05){// pentagon
 			result.sides = 5;
