@@ -98,6 +98,14 @@ public class GameObject {
 		droneCounter = 1;
 	}
 	
+	public double getTerminalSpeed(){
+		return Math.sqrt(acceleration.normValue()*mass/(radius*GamePanel.DRAG_CONSTANT));
+	}
+	public Float64Vector getTerminalVelocity(){
+		double anorm = acceleration.normValue();
+		return acceleration.times(getTerminalSpeed()/anorm);
+	}
+	
 	public void setFireKey(boolean fireKey){
 		this.fireKey=fireKey;
 		if(fireKey==true){
@@ -201,7 +209,7 @@ public class GameObject {
 		if(Math.abs(spin)>GamePanel.EPS){
 			double spinBy = spin*dtime;
 			spin -= spinBy*spinDecay;
-			rotation += spinBy;
+			rotation = (rotation+spinBy)%(Math.PI*2);
 			acceleration = GamePanel.complexMultiply(GamePanel.polar(1, spinBy), acceleration);
 		}
 		double velocityMag = velocity.normValue();
@@ -250,8 +258,8 @@ public class GameObject {
 			double[] xs = new double[sides];
 			double[] ys = new double[sides];
 			for(int i=0;i<sides;i++,angle+=ainc){
-				xs[i] = xpos+Math.cos(angle);
-				ys[i] = ypos+Math.sin(angle);
+				xs[i] = xpos+radius*Math.cos(angle);
+				ys[i] = ypos+radius*Math.sin(angle);
 			}
 			Path2D.Double path;
 			shape = path = new Path2D.Double();

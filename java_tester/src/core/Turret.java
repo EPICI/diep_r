@@ -38,6 +38,7 @@ public class Turret {
 	public int sides;
 	public double spin;
 	public double spinDecay;
+	public double converge;
 	
 	public Turret(){
 		parent = null;
@@ -64,6 +65,7 @@ public class Turret {
 		spin = 0;
 		spinDecay = 0;
 		limit = 1<<30;
+		converge = 0;
 	}
 	
 	public void setShape(double length,double width){
@@ -124,6 +126,7 @@ public class Turret {
 		spin = source.spin;
 		spinDecay = source.spinDecay;
 		limit = source.limit;
+		converge = source.converge;
 	}
 
 	public void update(double time){
@@ -194,6 +197,11 @@ public class Turret {
 		bullet.spin = spin;
 		bullet.spinDecay = spinDecay;
 		bullet.updateProperties(false, false, true, true);
+		if(converge!=0){//battleship aiming
+			double convergeMul = bullet.getTerminalSpeed()/parent.aim.normValue()*converge;
+			bullet.spinDecay *= convergeMul;
+			bullet.spin *= convergeMul;
+		}
 	}
 
 	public void draw(Graphics2D g){

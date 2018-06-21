@@ -1,6 +1,7 @@
 package core;
 
 import java.util.*;
+import java.util.concurrent.*;
 import java.awt.*;
 import java.awt.event.*;
 import javax.swing.*;
@@ -43,13 +44,14 @@ public class GamePanel extends JPanel {
 			"L to spawn opponent",
 			"Shift L to spawn boss opponent",
 			"Alt L to kill opponent",
+			"Ctrl L for mirror opponent",
 			"H for rapid healing",
 	};
 	
 	public double lastUpdated;
 	
 	public ArrayList<GameObject> objects;
-	public ArrayList<GameObject> objToAdd;
+	public ArrayBlockingQueue<GameObject> objToAdd;
 	
 	public GameObject player;
 	
@@ -68,7 +70,7 @@ public class GamePanel extends JPanel {
 		
 		lastUpdated = 0;
 		objects = new ArrayList<>();
-		objToAdd = new ArrayList<>();
+		objToAdd = new ArrayBlockingQueue<>(16,true);
 		
 		player = new GameObject();
 		Tank.initTank(GamePanel.this,player);
@@ -195,11 +197,15 @@ public class GamePanel extends JPanel {
 					break;
 				}
 				case KeyEvent.VK_L:{
-					if(opponent!=null)opponent.health = -1;
+					if(opponent!=null){
+						opponent.health = -1;
+						opponent.decay = 1;
+					}
 					if(keys.get(KeyEvent.VK_ALT)){
 						opponent = null;
 					}else{
 						boolean boss = keys.get(KeyEvent.VK_SHIFT);
+						boolean mirror = keys.get(KeyEvent.VK_CONTROL);
 						// make opponent
 						GameObject opponent = GamePanel.this.opponent = new GameObject();
 						opponent.team = boss?1:player.team;
@@ -221,7 +227,7 @@ public class GamePanel extends JPanel {
 						opponent.aim = directionOf(player.position.minus(opponent.position));
 						opponent.updateAim();
 						Tank.initTank(GamePanel.this, opponent);
-						Tank.initTank(GamePanel.this, opponent, -1);
+						Tank.initTank(GamePanel.this, opponent, mirror?Tank.getType(player.subtype):-1);
 						objToAdd.add(opponent);
 					}
 					break;
@@ -257,6 +263,7 @@ public class GamePanel extends JPanel {
 							switch(upgrade){
 							case 0:Tank.initTriplet(player);break;
 							case 1:Tank.initStream(player);break;
+							case 2:Tank.initBattleship(player);break;
 							}
 						}
 					}else{
@@ -281,8 +288,12 @@ public class GamePanel extends JPanel {
 		int width = getWidth(), height = getHeight();
 		double scale = getScale();
 		double aimx = (mousex-width*0.5)/scale, aimy = (mousey-height*0.5)/scale;
-		player.aim = Float64Vector.valueOf(aimx,aimy);
-		player.updateAim();
+		Float64Vector newAim = Float64Vector.valueOf(aimx,aimy);
+		double aimdist = newAim.normValue();
+		if(aimdist>EPS){// aiming at yourself is not allowed
+			player.aim = newAim;
+			player.updateAim();
+		}
 	}
 	
 	public void onKeyChange(){
@@ -361,9 +372,9 @@ public class GamePanel extends JPanel {
 	}
 	
 	public void update(double time){
-		ArrayList<GameObject> oldObjToAdd = objToAdd;
-		objToAdd = new ArrayList<>();
-		objects.addAll(oldObjToAdd);
+		for(GameObject nextToAdd=objToAdd.poll();nextToAdd!=null;nextToAdd=objToAdd.poll()){
+			objects.add(nextToAdd);
+		}
 		HashMap<Float64Vector,ArrayList<GameObject>> cells = new HashMap<>();
 		double dtime = time - lastUpdated;
 		for(int i=0;i<objects.size();i++){
@@ -401,6 +412,9 @@ public class GamePanel extends JPanel {
 			}
 		}
 		if(!objects.contains(opponent)){
+			if(opponent!=null){
+				opponent.decay = 1;
+			}
 			opponent = null;
 		}else{
 			Float64Vector otp = player.position.minus(opponent.position);
