@@ -25,13 +25,15 @@ public class Tank extends GameObject {
 		case "triplet":return 12;
 		case "stream":return 13;
 		case "battleship":return 14;
+		case "pentashot":return 15;
+		case "hex":return 16;
 		}
 		return -1;
 	}
 	
 	public static void initTank(GamePanel panel,GameObject tank,int type){
 		if(panel==null)panel = tank.getRoot();
-		if(type==-1)type=panel.random.nextInt(15);
+		if(type==-1)type=panel.random.nextInt(17);
 		switch(type){
 		case 0:initTank(panel,tank);break;
 		case 1:initSpammer(tank);break;
@@ -48,6 +50,8 @@ public class Tank extends GameObject {
 		case 12:initTriplet(tank);break;
 		case 13:initStream(tank);break;
 		case 14:initBattleship(tank);break;
+		case 15:initPentashot(tank);break;
+		case 16:initHex(tank);break;
 		}
 	}
 	
@@ -254,9 +258,9 @@ public class Tank extends GameObject {
 		turret.damage = 0.7;
 		turret.health = 1.4;
 		turret.decay = 0.4;
-		turret.cap = 2;
-		turret.damageOver = 0.15;
-		turret.healthOver = 0.3;
+		turret.cap = 10;
+		turret.damageOver = 0.35;
+		turret.healthOver = 0.7;
 		turret.setShape(2.5, 1);
 	}
 	
@@ -276,7 +280,10 @@ public class Tank extends GameObject {
 		turret.health = 1;
 		turret.decay = 0.2;
 		turret.sides = 3;
-		turret.setShape(1.3, 1.8, 0.3);
+		turret.inset = 0.5;
+		turret.position = Float64Vector.valueOf(1,0);
+		turret.xs = new double[]{0.0, 1.4, 1.7, 0.5, 0.5, 1.7, 1.4, 0.0};
+		turret.ys = new double[]{0.9, 0.9, 0.3, 0.3,-0.3,-0.3,-0.9,-0.9};
 	}
 	
 	public static void initBooster(GameObject tank){
@@ -412,11 +419,11 @@ public class Tank extends GameObject {
 		turret.damage = 0.5;
 		turret.health = 0.5;
 		turret.decay = 0.4;
-		turret.setShape(1.8, 0.6, 0, -0.4, -0.4);
+		turret.setShape(2, 0.6, 0, -0.4, -0.4);
 		turret = Turret.copy(turret);
 		tank.turrets.add(turret);
 		turret.delay = 0.5;
-		turret.setShape(1.8, 0.6, 0, 0.4, 0.4);
+		turret.setShape(2, 0.6, 0, 0.4, 0.4);
 		turret = Turret.copy(turret);
 		tank.turrets.add(0,turret);
 		turret.rotation = -Math.PI/4;
@@ -424,12 +431,97 @@ public class Tank extends GameObject {
 		turret.spin = 1;
 		turret.spinDecay = 1;
 		turret.converge = 4.532501506905544;// needs to be accurate for proper converging
-		turret.setShape(1.6, 0.6);
+		turret.setShape(1.4, 0.6);
 		turret = Turret.copy(turret);
 		tank.turrets.add(0,turret);
 		turret.rotation = -turret.rotation;
 		turret.delay = 0;
 		turret.spin = -1;
+	}
+	
+	public static void initPentashot(GameObject tank){
+		tank.subtype = "pentashot";
+		Turret turret = new Turret();
+		tank.turrets.clear();
+		tank.turrets.add(turret);
+		turret.parent = tank;
+		turret.lastUpdated = tank.lastUpdated;
+		turret.multiplier = 1.6;
+		turret.radius = 0.5;
+		turret.velocity = Float64Vector.valueOf(VELOCITY,0);
+		turret.acceleration = Float64Vector.valueOf(130,0);
+		turret.density = 1;
+		turret.damage = 0.7;
+		turret.health = 0.7;
+		turret.decay = 0.4;
+		turret.setShape(2, 1);
+		turret = Turret.copy(turret);
+		tank.turrets.add(0,turret);
+		turret.rotation = Math.PI/6;
+		turret.radius = 0.4;
+		turret.damage = 0.6;
+		turret.health = 0.6;
+		turret.delay = 1d/3;
+		turret.setShape(1.7, 1);
+		turret = Turret.copy(turret);
+		tank.turrets.add(0,turret);
+		turret.rotation = -turret.rotation;
+		turret = Turret.copy(turret);
+		tank.turrets.add(0,turret);
+		turret.rotation = Math.PI/3;
+		turret.radius = 0.3;
+		turret.damage = 0.5;
+		turret.health = 0.5;
+		turret.delay = 2d/3;
+		turret.setShape(1.4, 1);
+		turret = Turret.copy(turret);
+		tank.turrets.add(0,turret);
+		turret.rotation = -turret.rotation;
+	}
+	
+	public static void initHex(GameObject tank){
+		tank.subtype = "hex";
+		Turret turret = new Turret();
+		tank.turrets.clear();
+		tank.turrets.add(turret);
+		turret.parent = tank;
+		turret.lastUpdated = tank.lastUpdated;
+		turret.multiplier = 1.6;
+		turret.radius = 0.5;
+		turret.velocity = Float64Vector.valueOf(VELOCITY,0);
+		turret.acceleration = Float64Vector.valueOf(130,0);
+		turret.density = 1;
+		turret.damage = 0.7;
+		turret.health = 0.7;
+		turret.decay = 0.4;
+		turret.setShape(2, 1);
+		turret = Turret.copy(turret);
+		tank.turrets.add(turret);
+		turret.multiplier = 0.8;
+		turret.rotation = Math.PI/3;
+		turret.delay = 1d/6;
+		turret.setShape(1.7, 1);
+		turret = Turret.copy(turret);
+		tank.turrets.add(turret);
+		turret.rotation = Math.PI/3;
+		turret.delay = 1d/3;
+		turret.setShape(1.4, 1);
+		turret = Turret.copy(turret);
+		tank.turrets.add(turret);
+		turret.multiplier = 0.8;
+		turret.rotation = -Math.PI/3;
+		turret.delay = 2d/3;
+		turret.setShape(1.7, 1);
+		turret = Turret.copy(turret);
+		tank.turrets.add(turret);
+		turret.rotation = -Math.PI/3;
+		turret.delay = 5d/6;
+		turret.setShape(1.4, 1);
+		for(int i=0;i<5;i++){
+			turret = Turret.copy(tank.turrets.get(i));
+			tank.turrets.add(turret);
+			turret.rotation += Math.PI;
+		}
 	}
 	
 }

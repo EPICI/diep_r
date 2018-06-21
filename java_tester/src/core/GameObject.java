@@ -43,6 +43,7 @@ public class GameObject {
 	public double spinDecay;
 	public double lastHit;
 	public double droneCounter;
+	public double inset;
 	
 	private static final int[] LEVEL_SCORE = new int[46];
 	
@@ -96,6 +97,7 @@ public class GameObject {
 		spinDecay = 0;
 		lastHit = 0;
 		droneCounter = 1;
+		inset = 0;
 	}
 	
 	public double getTerminalSpeed(){
@@ -122,6 +124,13 @@ public class GameObject {
 	
 	public boolean friendly(GameObject other){
 		return (team & other.team)!=0;
+	}
+	
+	public void checkCollide(GameObject other,double dtime){
+		if(intersects(other)){
+			push(other, dtime);
+			if(!friendly(other))collide(other, dtime);
+		}
 	}
 	
 	public void push(GameObject other,double dtime){
@@ -193,10 +202,18 @@ public class GameObject {
 	public void update(double time){
 		double dtime = time - lastUpdated;
 		// update children
+		boolean droneUser = false;
+		for(Turret turret:turrets){
+			droneUser |= turret.controllable;
+		}
 		double accelFirst = turrets.isEmpty()?1:turrets.get(0).acceleration.normValue()*getBulletAccel();
 		double droneCounter = this.droneCounter;
 		for(GameObject child:children){
 			if(child.controllable){
+				if(!droneUser){
+					child.decay = 1;
+					continue;
+				}
 				child.maxAcceleration = accelFirst*this.droneCounter/droneCounter;
 				Float64Vector point = GamePanel.directionOf(aim.plus(position).minus(child.position));
 				child.aim = child.acceleration = point.times(child.maxAcceleration*(altFire?-1:1));
@@ -263,9 +280,22 @@ public class GameObject {
 			}
 			Path2D.Double path;
 			shape = path = new Path2D.Double();
-			path.moveTo(xs[0], ys[0]);
-			for(int i=1;i<sides;i++){
-				path.lineTo(xs[i], ys[i]);
+			path.moveTo(xs[sides-1], ys[sides-1]);
+			if(inset==0){// simple algorithm
+				for(int i=0;i<sides;i++){
+					path.lineTo(xs[i], ys[i]);
+				}
+			}else{// apply inset
+				double x1,y1,x2=xs[sides-1],y2=ys[sides-1],x3,y3;
+				for(int i=0;i<sides;i++){
+					x1=x2;
+					y1=y2;
+					x2=xs[i];
+					y2=ys[i];
+					x3=0.5*(x1+x2);
+					y3=0.5*(y1+y2);
+					path.quadTo(GamePanel.bezier(x3, xpos, inset), GamePanel.bezier(y3, ypos, inset), x2, y2);
+				}
 			}
 			path.closePath();
 		}

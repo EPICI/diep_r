@@ -21,7 +21,7 @@ public class GamePanel extends JPanel {
 	
 	public static final double FADE_AT = 0.05;
 	
-	public static final double CELL_SIZE = 8;
+	public static final double CELL_SIZE = 5;
 	public static final double CELL_MUL = 1d/CELL_SIZE;
 	private static final Float64Vector[] CELL_NEXT = {
 			Float64Vector.valueOf(0,1),
@@ -213,7 +213,7 @@ public class GamePanel extends JPanel {
 							opponent.team = 2<<random.nextInt(4);
 						}
 						int pts = boss?70:player.level;
-						int lim = boss?10:7;
+						int lim = boss?14:7;
 						while(pts>0){
 							int i = random.nextInt(8);
 							int inc = random.nextInt(1+Math.min(pts, lim-opponent.stats[i]));
@@ -264,6 +264,14 @@ public class GamePanel extends JPanel {
 							case 0:Tank.initTriplet(player);break;
 							case 1:Tank.initStream(player);break;
 							case 2:Tank.initBattleship(player);break;
+							}
+						}else if(player.subtype.equals("trishot")){
+							switch(upgrade){
+							case 0:Tank.initPentashot(player);break;
+							}
+						}else if(player.subtype.equals("quad")){
+							switch(upgrade){
+							case 0:Tank.initHex(player);break;
 							}
 						}
 					}else{
@@ -389,16 +397,22 @@ public class GamePanel extends JPanel {
 		}
 		for(Float64Vector acell:cells.keySet()){
 			ArrayList<GameObject> alist = cells.get(acell);
+			// collide own cell
+			for(int i=alist.size()-1;i>0;i--){
+				GameObject first = alist.get(i);
+				for(int j=i-1;j>=0;j--){
+					GameObject second = alist.get(j);
+					first.checkCollide(second, dtime);
+				}
+			}
+			// collide other cells
 			for(Float64Vector offset:CELL_NEXT){
 				Float64Vector bcell = acell.plus(offset);
 				ArrayList<GameObject> blist = cells.get(bcell);
 				if(blist!=null){
 					for(GameObject first:alist){
 						for(GameObject second:blist){
-							if(first.intersects(second)){
-								first.push(second, dtime);
-								if(!first.friendly(second))first.collide(second, dtime);
-							}
+							first.checkCollide(second, dtime);
 						}
 					}
 				}
@@ -476,6 +490,10 @@ public class GamePanel extends JPanel {
 	public static Float64Vector complexMultiply(Float64Vector a,Float64Vector b){
 		double ar = a.getValue(0), ai = a.getValue(1), br = b.getValue(0), bi = b.getValue(1);
 		return Float64Vector.valueOf(ar*br-ai*bi,ar*bi+ai*br);
+	}
+	
+	public static double bezier(double a,double b,double t){
+		return a+(b-a)*t;
 	}
 	
 }

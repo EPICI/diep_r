@@ -10,8 +10,8 @@ public class Main {
 	public static JFrame frame;
 	public static GamePanel panel;
 	
-	public static final long FRAME_MS = 11;
-	public static final int RENDER_EVERY = 3;
+	public static final long FRAME_MS = 33;
+	public static final int RENDER_EVERY = 1;
 
 	public static void main(String[] args) {
 		frame = new JFrame("diep.io remake");
