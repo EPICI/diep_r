@@ -119,6 +119,14 @@ public class GameObject {
 		return dps;
 	}
 	
+	public double getDamage(){
+		double mul = 1;
+		for(Turret turret:turrets){
+			mul += turret.parentDamageHold*(turret.accumulator>=turret.delay?1:0);
+		}
+		return damage*mul;
+	}
+	
 	public double getTerminalSpeed(){
 		return Math.sqrt(acceleration.normValue()*mass/(radius*GamePanel.DRAG_CONSTANT));
 	}
@@ -161,7 +169,7 @@ public class GameObject {
 	
 	public void collide(GameObject other,double dtime){
 		dtime = Math.min(dtime, Math.min(health/other.damage, other.health/damage));
-		double aloss = other.damage*dtime*GamePanel.DAMAGE_CONSTANT, bloss = damage*dtime*GamePanel.DAMAGE_CONSTANT;
+		double aloss = other.getDamage()*dtime*GamePanel.DAMAGE_CONSTANT, bloss = getDamage()*dtime*GamePanel.DAMAGE_CONSTANT;
 		health -= aloss;
 		other.health -= bloss;
 		lastHit = other.lastHit = lastUpdated;
@@ -179,9 +187,10 @@ public class GameObject {
 	}
 	
 	public void updateStats(){
-		damage = 1+0.2*stats[2];
-		density = maxHealth = 1+level*0.04+stats[1]*0.4;
-		decay = -0.001*(1+2*stats[0])*maxHealth;
+		damage = 1+0.3*stats[2];
+		maxHealth = 1+level*0.04+0.2*stats[1];
+		density = 1+0.2*stats[1];
+		decay = -0.001*Math.pow(1+0.5*stats[0],2)*maxHealth;
 		maxAcceleration = 60*(1-0.015*level)*(1+0.1*stats[7]);
 	}
 	
@@ -221,10 +230,15 @@ public class GameObject {
 	public void update(double time){
 		double dtime = time - lastUpdated;
 		// update children
+		double odensity = density;
+		double densityMul = 1;
 		boolean droneUser = false;
 		for(Turret turret:turrets){
 			droneUser |= turret.controllable;
+			densityMul += turret.densityHold * (turret.accumulator>=turret.delay?1:0);
 		}
+		density *= densityMul;
+		updateProperties(false, false, false, true);
 		double accelFirst = turrets.isEmpty()?1:turrets.get(0).acceleration.normValue()*getBulletAccel();
 		double droneCounter = this.droneCounter;
 		for(GameObject child:children){
@@ -267,6 +281,8 @@ public class GameObject {
 		if(ldecay<0)ldecay *= Math.exp((time-lastHit)*0.1);
 		health -= ldecay*dtime;
 		health = Math.min(health, maxHealth);
+		// reset density
+		density = odensity;
 		// update lastUpdated
 		lastUpdated = time;
 	}
@@ -328,7 +344,7 @@ public class GameObject {
 		g.setColor(fillCol);
 		g.fill(shape);
 		g.setColor(borderCol);
-		g.setStroke(new BasicStroke((float)GamePanel.STROKE_WIDTH));
+		g.setStroke(new BasicStroke((float)GamePanel.STROKE_WIDTH,BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND));
 		g.draw(shape);
 		if(root.showInfo && health<maxHealth){
 			// health bar

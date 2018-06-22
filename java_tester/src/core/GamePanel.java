@@ -213,7 +213,7 @@ public class GamePanel extends JPanel {
 							opponent.team = 2<<random.nextInt(4);
 						}
 						int pts = boss?70:player.level;
-						int lim = boss?14:7;
+						int lim = boss?15:10;
 						while(pts>0){
 							int i = random.nextInt(8);
 							int inc = random.nextInt(1+Math.min(pts, lim-opponent.stats[i]));
@@ -272,6 +272,11 @@ public class GamePanel extends JPanel {
 						}else if(player.subtype.equals("destroyer")){
 							switch(upgrade){
 							case 0:Tank.initSkimmer(player);break;
+							}
+						}else if(player.subtype.equals("booster")){
+							switch(upgrade){
+							case 0:Tank.initFighter(player);break;
+							case 1:Tank.initSpike(player);break;
 							}
 						}
 					}else if(upgrade<8){

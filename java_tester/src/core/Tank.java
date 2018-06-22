@@ -27,13 +27,15 @@ public class Tank extends GameObject {
 		case "battleship":return 14;
 		case "pentashot":return 15;
 		case "skimmer":return 16;
+		case "fighter":return 17;
+		case "spike":return 18;
 		}
 		return -1;
 	}
 	
 	public static void initTank(GamePanel panel,GameObject tank,int type){
 		if(panel==null)panel = tank.getRoot();
-		if(type==-1)type=panel.random.nextInt(17);
+		if(type==-1)type=panel.random.nextInt(19);
 		switch(type){
 		case 0:initTank(panel,tank);break;
 		case 1:initSpammer(tank);break;
@@ -52,6 +54,8 @@ public class Tank extends GameObject {
 		case 14:initBattleship(tank);break;
 		case 15:initPentashot(tank);break;
 		case 16:initSkimmer(tank);break;
+		case 17:initFighter(tank);break;
+		case 18:initSpike(tank);break;
 		}
 	}
 	
@@ -133,12 +137,12 @@ public class Tank extends GameObject {
 		turret.density = 1;
 		turret.damage = 1;
 		turret.health = 1;
-		turret.decay = 0.8;
+		turret.decay = 0.6;
 		turret.setShape(2, 1);
 		turret = Turret.copy(turret);
 		tank.turrets.add(turret);
 		turret.rotation = Math.PI*5/6;
-		turret.velocity = Float64Vector.valueOf(VELOCITY*3,0);
+		turret.velocity = Float64Vector.valueOf(VELOCITY*5,0);
 		turret.damage = 0.5;
 		turret.health = 0.5;
 		turret.setShape(1.7, 1);
@@ -300,12 +304,12 @@ public class Tank extends GameObject {
 		turret.density = 1;
 		turret.damage = 1;
 		turret.health = 1;
-		turret.decay = 1.5;
+		turret.decay = 0.8;
 		turret.setShape(2, 1);
 		turret = Turret.copy(turret);
 		tank.turrets.add(turret);
 		turret.rotation = Math.PI*5/6;
-		turret.velocity = Float64Vector.valueOf(VELOCITY*3,0);
+		turret.velocity = Float64Vector.valueOf(VELOCITY*5,0);
 		turret.damage = 0.5;
 		turret.health = 0.5;
 		turret.setShape(1.7, 1);
@@ -510,6 +514,74 @@ public class Tank extends GameObject {
 		inherited = Turret.copy(inherited);
 		turret.inherit.add(inherited);
 		inherited.rotation = -inherited.rotation;
+	}
+	
+	public static void initFighter(GameObject tank){
+		tank.subtype = "fighter";
+		Turret turret = new Turret();
+		tank.turrets.clear();
+		tank.turrets.add(turret);
+		turret.parent = tank;
+		turret.lastUpdated = tank.lastUpdated;
+		turret.multiplier = 1.6;
+		turret.radius = 0.5;
+		turret.velocity = Float64Vector.valueOf(VELOCITY,0);
+		turret.acceleration = Float64Vector.valueOf(130,0);
+		turret.density = 1;
+		turret.damage = 0.9;
+		turret.health = 0.9;
+		turret.decay = 0.8;
+		turret.setShape(2, 1);
+		turret = Turret.copy(turret);
+		tank.turrets.add(turret);
+		turret.rotation = Math.PI/2;
+		turret.delay = 0.5;
+		turret.damage = 0.7;
+		turret.health = 0.7;
+		turret.setShape(1.7, 1);
+		turret = Turret.copy(turret);
+		tank.turrets.add(turret);
+		turret.rotation = -turret.rotation;
+		turret = Turret.copy(turret);
+		tank.turrets.add(0,turret);
+		turret.rotation = Math.PI*5/6;
+		turret.velocity = Float64Vector.valueOf(VELOCITY*5,0);
+		turret.delay = 0;
+		turret.damage = 0.5;
+		turret.health = 0.5;
+		turret = Turret.copy(turret);
+		tank.turrets.add(0,turret);
+		turret.rotation = -turret.rotation;
+	}
+	
+	public static void initSpike(GameObject tank){
+		tank.subtype = "spike";
+		Turret turret = new Turret();
+		tank.turrets.clear();
+		tank.turrets.add(turret);
+		turret.parent = tank;
+		turret.lastUpdated = tank.lastUpdated;
+		turret.multiplier = 0.2;
+		turret.radius = 0.5;
+		turret.velocity = Float64Vector.valueOf(VELOCITY,0);
+		turret.acceleration = Float64Vector.valueOf(130,0);
+		turret.density = 5;
+		turret.damage = 0.8;
+		turret.health = 0.8;
+		turret.decay = 0.4;
+		turret.densityHold = 0.1;
+		turret.parentDamageHold = 0.2;
+		turret.sides = 3;
+		turret.sweep = Math.PI*2;
+		turret.pushback = 1.5;
+		turret.position = Float64Vector.valueOf(1,0);
+		turret.xs = new double[]{ 0.75, 1.5,  0.75};
+		turret.ys = new double[]{0.433, 0.0,-0.433};
+		for(int i=1;i<12;i++){
+			turret = Turret.copy(turret);
+			tank.turrets.add(turret);
+			turret.rotation = Math.PI*i/6;
+		}
 	}
 	
 }

@@ -23,6 +23,10 @@ public class Turret {
 	public double spreadMul;
 	public int shots;
 	public int limit;
+	public double sweep;
+	public double densityHold;
+	public double parentDamageHold;
+	public double pushback;
 	
 	// shot info
 	public double radius,radiusOver;
@@ -70,6 +74,10 @@ public class Turret {
 		converge = 0;
 		inset = 0;
 		inherit = new ArrayList<>();
+		sweep = 0;
+		densityHold = 0;
+		parentDamageHold = 0;
+		pushback = 0.3;
 	}
 	
 	public void setShape(double length,double width){
@@ -136,6 +144,10 @@ public class Turret {
 		for(Turret inherited:source.inherit){
 			inherit.add(Turret.copy(inherited));
 		}
+		sweep = source.sweep;
+		densityHold = source.densityHold;
+		parentDamageHold = source.parentDamageHold;
+		pushback = source.pushback;
 	}
 
 	public void update(double time){
@@ -147,7 +159,11 @@ public class Turret {
 		//System.out.println("accumulator: "+accumulator);
 		if(parent.fireKey){
 			// trying to shoot
-			if(accumulator>=delay && inc>GamePanel.EPS){
+			if(
+					accumulator>=delay
+					&& inc>GamePanel.EPS
+					&& (sweep==0 || Angles.compare(sweep*(lastUpdated-parent.timeCreated), -rotation)-Angles.compare(sweep*(time-parent.timeCreated), -rotation)==-2*Math.signum(sweep))
+					){
 				double ftime;
 				double over;
 				if(ready){
@@ -181,7 +197,7 @@ public class Turret {
 	
 	public void initShot(GameObject bullet,double time,double over){
 		double scale = parent.radius;
-		double protation = parent.rotation+rotation;
+		double protation = parent.rotation+rotation+sweep*(time-parent.timeCreated);
 		double lrotation = protation+Math.PI*2*spread*Math.sin(Math.PI*2*spreadMul*shots);
 		double bspeed = parent.getBulletAccel();
 		Float64Vector protate = GamePanel.polar(1, protation);
@@ -225,9 +241,10 @@ public class Turret {
 
 	public void draw(Graphics2D g){
 		double scale = parent.radius;
+		double protation = parent.rotation+rotation+sweep*(lastUpdated-parent.timeCreated);
 		g.translate(parent.position.getValue(0), parent.position.getValue(1));
-		g.rotate(rotation+parent.rotation);
-		g.translate(-0.2*Math.max(0, delay-accumulator), 0);
+		g.rotate(protation);
+		g.translate(-pushback*Math.max(0, delay-accumulator), 0);
 		ColorSet colors = ColorSet.forTeam(1);
 		int sides = xs.length;
 		Path2D.Double path = new Path2D.Double();
