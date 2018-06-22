@@ -258,9 +258,9 @@ public class Tank extends GameObject {
 		turret.damage = 0.7;
 		turret.health = 1.4;
 		turret.decay = 0.4;
-		turret.cap = 10;
-		turret.damageOver = 0.35;
-		turret.healthOver = 0.7;
+		turret.cap = 15;
+		turret.damageOver = 0.2;
+		turret.healthOver = 0.4;
 		turret.setShape(2.5, 1);
 	}
 	

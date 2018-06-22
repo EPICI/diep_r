@@ -100,6 +100,25 @@ public class GameObject {
 		inset = 0;
 	}
 	
+	public String statString(){
+		StringBuilder sb = new StringBuilder();
+		sb.append(stats[0]);
+		for(int i=1;i<8;i++){
+			sb.append("/");
+			sb.append(stats[i]);
+		}
+		return sb.toString();
+	}
+	
+	public double getDps(){
+		double dps = 0;
+		for(Turret turret:turrets){
+			dps += turret.damage*turret.health*turret.multiplier;
+		}
+		dps *= getBulletDamage()*getBulletHealth()*getReload();
+		return dps;
+	}
+	
 	public double getTerminalSpeed(){
 		return Math.sqrt(acceleration.normValue()*mass/(radius*GamePanel.DRAG_CONSTANT));
 	}
@@ -329,7 +348,7 @@ public class GameObject {
 		result.team = 1;
 		result.acceleration = GamePanel.polar(GamePanel.FRICTION_CONSTANT, Math.PI*2*random.nextDouble());
 		result.rotation = Math.PI*2*random.nextDouble();
-		result.density = 2;
+		result.density = 5;
 		result.timeCreated = result.lastUpdated = lastUpdated;
 		if(roll<0.05){// pentagon
 			result.sides = 5;

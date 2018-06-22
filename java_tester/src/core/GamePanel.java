@@ -274,7 +274,7 @@ public class GamePanel extends JPanel {
 							case 0:Tank.initHex(player);break;
 							}
 						}
-					}else{
+					}else if(upgrade<8){
 						// upgrade stat
 						player.stats[upgrade]++;
 						player.updateStats();
@@ -349,23 +349,10 @@ public class GamePanel extends JPanel {
 			g.drawLine(0, rypos, width, rypos);
 		}
 		// stats
-		StringBuilder sb = new StringBuilder();
-		sb.append(player.stats[0]);
-		for(int i=1;i<8;i++){
-			sb.append("/");
-			sb.append(player.stats[i]);
-		}
 		g.setColor(Color.BLACK);
-		g.drawString(sb.toString(), 10, 20);
-		double dps = 0;
-		for(Turret turret:player.turrets){
-			dps += turret.damage*turret.health*turret.multiplier;
-		}
-		dps *= player.getBulletDamage()*player.getBulletHealth()*player.getReload();
-		g.drawString("DPS: "+dps, 10, 40);
-		g.drawString("Level: "+player.level, 10, 60);
-		g.drawString("Score: "+player.score, 10, 80);
-		g.drawString("Health: "+player.health+" / "+player.maxHealth, 10, 100);
+		g.drawString("Level "+player.level+", "+player.score+" score", 10, 20);
+		g.drawString("Playing as "+player.subtype+" with build "+player.statString()+" -> "+player.getDps()+" DPS, "+player.maxHealth+" HP", 10, 40);
+		g.drawString(opponent==null?"No opponent":"Opponent is a "+opponent.subtype+" with build "+opponent.statString()+" -> "+opponent.getDps()+" DPS, "+opponent.maxHealth+" HP", 10, 60);
 		for(int i=0;i<INSTRUCTIONS.length;i++){
 			g.drawString(INSTRUCTIONS[i], 10, height-20*(INSTRUCTIONS.length-i));
 		}

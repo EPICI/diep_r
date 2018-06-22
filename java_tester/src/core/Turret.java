@@ -40,6 +40,7 @@ public class Turret {
 	public double spinDecay;
 	public double converge;
 	public double inset;
+	public ArrayList<Turret> inherit;
 	
 	public Turret(){
 		parent = null;
@@ -68,6 +69,7 @@ public class Turret {
 		limit = 1<<30;
 		converge = 0;
 		inset = 0;
+		inherit = new ArrayList<>();
 	}
 	
 	public void setShape(double length,double width){
@@ -130,6 +132,10 @@ public class Turret {
 		limit = source.limit;
 		converge = source.converge;
 		inset = source.inset;
+		inherit = new ArrayList<>();
+		for(Turret inherited:source.inherit){
+			inherit.add(Turret.copy(inherited));
+		}
 	}
 
 	public void update(double time){
@@ -201,6 +207,12 @@ public class Turret {
 		bullet.spinDecay = spinDecay;
 		bullet.inset = inset;
 		bullet.updateProperties(false, false, true, true);
+		for(Turret inherited:inherit){
+			inherited = Turret.copy(inherited);
+			bullet.turrets.add(inherited);
+			inherited.damage *= bullet.damage;
+			inherited.health *= bullet.health;
+		}
 		if(converge!=0){//battleship aiming
 			double convergeMul = bullet.getTerminalSpeed()/parent.aim.normValue()*converge;
 			bullet.spinDecay *= convergeMul;
