@@ -269,9 +269,9 @@ public class GamePanel extends JPanel {
 							switch(upgrade){
 							case 0:Tank.initPentashot(player);break;
 							}
-						}else if(player.subtype.equals("quad")){
+						}else if(player.subtype.equals("destroyer")){
 							switch(upgrade){
-							case 0:Tank.initHex(player);break;
+							case 0:Tank.initSkimmer(player);break;
 							}
 						}
 					}else if(upgrade<8){

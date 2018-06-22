@@ -164,7 +164,7 @@ public class Turret {
 				bullet.parent = parent;
 				parent.velocity = parent.velocity.minus(bullet.velocity.times(bullet.mass/parent.mass));// recoil by Newton's equal and opposite law
 				parent.children.add(bullet);
-				parent.root.objects.add(bullet);
+				parent.getRoot().objects.add(bullet);
 				shots++;
 				bullet.update(time);
 			}
@@ -210,9 +210,12 @@ public class Turret {
 		for(Turret inherited:inherit){
 			inherited = Turret.copy(inherited);
 			bullet.turrets.add(inherited);
+			inherited.parent = bullet;
+			inherited.lastUpdated = bullet.lastUpdated;
 			inherited.damage *= bullet.damage;
 			inherited.health *= bullet.health;
 		}
+		bullet.setFireKey(true);
 		if(converge!=0){//battleship aiming
 			double convergeMul = bullet.getTerminalSpeed()/parent.aim.normValue()*converge;
 			bullet.spinDecay *= convergeMul;
