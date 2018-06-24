@@ -273,10 +273,18 @@ public class GamePanel extends JPanel {
 							switch(upgrade){
 							case 0:Tank.initSkimmer(player);break;
 							}
+						}else if(player.subtype.equals("sniper")){
+							switch(upgrade){
+							case 0:Tank.initRanger(player);break;
+							}
 						}else if(player.subtype.equals("booster")){
 							switch(upgrade){
 							case 0:Tank.initFighter(player);break;
 							case 1:Tank.initSpike(player);break;
+							}
+						}else if(player.subtype.equals("overlord")){
+							switch(upgrade){
+							case 0:Tank.initNecro(player);break;
 							}
 						}
 					}else if(upgrade<8){
@@ -322,6 +330,7 @@ public class GamePanel extends JPanel {
 		double result = 80+0.5*tank.level;
 		switch(tank.subtype){
 		case "sniper":result*=1.1;break;
+		case "ranger":result*=1.5-0.5*Math.exp(-0.1*(tank.stillBonus-1));break;
 		}
 		return result;
 	}
@@ -336,7 +345,7 @@ public class GamePanel extends JPanel {
 		// fetch
 		Graphics2D g = (Graphics2D) og;
 		int width = getWidth(), height = getHeight();
-		double scale = getScale();
+		double scale = getScale(), iscale = 1d/scale;
 		double camx = player.position.getValue(0);
 		double camy = player.position.getValue(1);
 		// rendering hints
@@ -345,11 +354,11 @@ public class GamePanel extends JPanel {
 		g.setColor(Color.decode("#cdcdcd"));
 		g.fillRect(0, 0, width, height);
 		g.setColor(Color.decode("#c5c5c5"));
-		for(double xpos=(-camx%1)*scale;xpos<width;xpos+=scale){
+		for(double xpos=(1-(camx-width*0.5*iscale)%1)*scale;xpos<width;xpos+=scale){
 			int rxpos = (int)xpos;
 			g.drawLine(rxpos, 0, rxpos, height);
 		}
-		for(double ypos=(-camy%1)*scale;ypos<height;ypos+=scale){
+		for(double ypos=(1-(camy-height*0.5*iscale)%1)*scale;ypos<height;ypos+=scale){
 			int rypos = (int)ypos;
 			g.drawLine(0, rypos, width, rypos);
 		}

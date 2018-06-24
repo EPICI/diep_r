@@ -44,6 +44,7 @@ public class GameObject {
 	public double lastHit;
 	public double droneCounter;
 	public double inset;
+	public double stillBonus;
 	
 	private static final int[] LEVEL_SCORE = new int[46];
 	
@@ -98,6 +99,7 @@ public class GameObject {
 		lastHit = 0;
 		droneCounter = 1;
 		inset = 0;
+		stillBonus = 0;
 	}
 	
 	public String statString(){
@@ -127,12 +129,20 @@ public class GameObject {
 		return damage*mul;
 	}
 	
+	public double getEquivalentDecay(){
+		return decay*getEquivalentHealth();
+	}
+	
+	public double getEquivalentHealth(){
+		return maxHealth*damage;
+	}
+	
 	public double getTerminalSpeed(){
-		return Math.sqrt(acceleration.normValue()*mass/(radius*GamePanel.DRAG_CONSTANT));
+		double anorm = maxAcceleration!=0?maxAcceleration:acceleration.normValue();
+		return Math.sqrt(anorm*mass/(radius*GamePanel.DRAG_CONSTANT));
 	}
 	public Float64Vector getTerminalVelocity(){
-		double anorm = acceleration.normValue();
-		return acceleration.times(getTerminalSpeed()/anorm);
+		return GamePanel.directionOf(acceleration).times(getTerminalSpeed());
 	}
 	
 	public void setFireKey(boolean fireKey){
@@ -184,6 +194,37 @@ public class GameObject {
 		score = 0;
 		other.updateProperties(true, true, true, true);
 		other.updateStats();
+		if(type.equals("shape") && other.subtype.equals("necro"))necrodby(other);
+	}
+	
+	public void necrodby(GameObject other){
+		boolean full = other.children.size()>=32;
+		double ihealth = Math.sqrt(maxHealth*other.getBulletHealth());// geo mean
+		double idamage = Math.sqrt(damage*other.getBulletDamage());// geo mean
+		if(full){
+			// look for something to replace
+			double score = ihealth*idamage;
+			int i;
+			GameObject child = null;
+			for(i=other.children.size()-1;i>=0;i--){
+				child = other.children.get(i);
+				if(child.getEquivalentHealth()<score)break;
+			}
+			if(i<0)return;
+			other.children.remove(i);
+			child.parent = null;//decouple
+			child.decay = child.maxHealth;
+		}
+		timeCreated = lastUpdated;
+		parent = other;
+		team = other.team;
+		colorOverride = null;
+		type = "shot";
+		subtype = "drone";
+		controllable = true;
+		health = maxHealth = ihealth;
+		damage = idamage;
+		other.children.add(this);
 	}
 	
 	public void updateStats(){
@@ -241,13 +282,15 @@ public class GameObject {
 		updateProperties(false, false, false, true);
 		double accelFirst = turrets.isEmpty()?1:turrets.get(0).acceleration.normValue()*getBulletAccel();
 		double droneCounter = this.droneCounter;
+		if(subtype.equals("necro"))droneCounter *= getReload();// reload reduces drone speed penalty
+		double oDroneCounter = droneCounter;
 		for(GameObject child:children){
 			if(child.controllable){
 				if(!droneUser){
 					child.decay = 1;
 					continue;
 				}
-				child.maxAcceleration = accelFirst*this.droneCounter/droneCounter;
+				child.maxAcceleration = accelFirst*oDroneCounter/droneCounter;
 				Float64Vector point = GamePanel.directionOf(aim.plus(position).minus(child.position));
 				child.aim = child.acceleration = point.times(child.maxAcceleration*(altFire?-1:1));
 				child.updateAim();
@@ -270,6 +313,8 @@ public class GameObject {
 		}
 		velocity = velocity.plus(laccel.times(dtime));
 		position = position.plus(velocity.times(dtime));
+		double vfrac = velocity.normValue()/getTerminalSpeed();
+		if(!Double.isFinite(vfrac))vfrac = 0;// NaN go away
 		//System.out.println(laccel+" "+velocity+" "+position);
 		// update turrets
 		for(Turret turret:turrets){
@@ -281,6 +326,9 @@ public class GameObject {
 		if(ldecay<0)ldecay *= Math.exp((time-lastHit)*0.1);
 		health -= ldecay*dtime;
 		health = Math.min(health, maxHealth);
+		// bonus for not moving
+		stillBonus += dtime;
+		stillBonus *= Math.exp(-dtime*vfrac);
 		// reset density
 		density = odensity;
 		// update lastUpdated

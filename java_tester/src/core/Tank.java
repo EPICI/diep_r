@@ -29,13 +29,15 @@ public class Tank extends GameObject {
 		case "skimmer":return 16;
 		case "fighter":return 17;
 		case "spike":return 18;
+		case "ranger":return 19;
+		case "necro":return 20;
 		}
 		return -1;
 	}
 	
 	public static void initTank(GamePanel panel,GameObject tank,int type){
 		if(panel==null)panel = tank.getRoot();
-		if(type==-1)type=panel.random.nextInt(19);
+		if(type==-1)type=panel.random.nextInt(21);
 		switch(type){
 		case 0:initTank(panel,tank);break;
 		case 1:initSpammer(tank);break;
@@ -56,6 +58,8 @@ public class Tank extends GameObject {
 		case 16:initSkimmer(tank);break;
 		case 17:initFighter(tank);break;
 		case 18:initSpike(tank);break;
+		case 19:initRanger(tank);break;
+		case 20:initNecro(tank);break;
 		}
 	}
 	
@@ -516,6 +520,28 @@ public class Tank extends GameObject {
 		inherited.rotation = -inherited.rotation;
 	}
 	
+	public static void initRanger(GameObject tank){
+		tank.subtype = "ranger";
+		Turret turret = new Turret();
+		tank.turrets.clear();
+		tank.turrets.add(turret);
+		turret.parent = tank;
+		turret.lastUpdated = tank.lastUpdated;
+		turret.multiplier = 1.0;
+		turret.radius = 0.5;
+		turret.velocity = Float64Vector.valueOf(VELOCITY,0);
+		turret.acceleration = Float64Vector.valueOf(90,0);
+		turret.density = 5;
+		turret.damage = 0.8;
+		turret.health = 1.2;
+		turret.decay = 0.4;
+		turret.cap = 15;
+		turret.radiusOver = 0.01;
+		turret.damageOver = 0.15;
+		turret.healthOver = 0.8;
+		turret.setShape(2.5, 1.6, 0.4);
+	}
+	
 	public static void initFighter(GameObject tank){
 		tank.subtype = "fighter";
 		Turret turret = new Turret();
@@ -582,6 +608,27 @@ public class Tank extends GameObject {
 			tank.turrets.add(turret);
 			turret.rotation = Math.PI*i/6;
 		}
+	}
+	
+	public static void initNecro(GameObject tank){
+		tank.subtype = "necro";
+		tank.droneCounter = 2;
+		Turret turret = new Turret();
+		tank.turrets.clear();
+		tank.turrets.add(turret);
+		turret.parent = tank;
+		turret.lastUpdated = tank.lastUpdated;
+		turret.multiplier = 0.6;
+		turret.radius = 0.5;
+		turret.velocity = Float64Vector.valueOf(VELOCITY,0);
+		turret.acceleration = Float64Vector.valueOf(30,0);
+		turret.density = 2;
+		turret.damage = 5;
+		turret.health = 0.5;
+		turret.decay = 2.0;
+		turret.controllable = true;// for drone user
+		turret.limit = 4;// gun meant for getting first drones only
+		turret.setShape(1.5, 1.5, -0.5);
 	}
 	
 }

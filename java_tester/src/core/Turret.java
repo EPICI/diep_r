@@ -218,7 +218,7 @@ public class Turret {
 		bullet.density = density;
 		bullet.controllable = controllable;
 		bullet.type = "shot";
-		bullet.subtype = "bullet";
+		bullet.subtype = controllable?"drone":"bullet";
 		bullet.spin = spin;
 		bullet.spinDecay = spinDecay;
 		bullet.inset = inset;
