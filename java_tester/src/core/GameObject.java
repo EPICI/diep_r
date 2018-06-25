@@ -163,6 +163,14 @@ public class GameObject {
 		return (team & other.team)!=0;
 	}
 	
+	public boolean related(GameObject other){
+		GameObject self = this;
+		boolean tself = self.parent!=null, tother = other.parent!=null;
+		while(self.parent!=null)self=self.parent;
+		while(other.parent!=null)other=other.parent;
+		return (tself^tother)&(self==other);
+	}
+	
 	public void checkCollide(GameObject other,double dtime){
 		if(intersects(other)){
 			push(other, dtime);
@@ -171,8 +179,13 @@ public class GameObject {
 	}
 	
 	public void push(GameObject other,double dtime){
+		boolean friendly = friendly(other);
+		boolean related = related(other);
+		double bounce = GamePanel.BOUNCE_CONSTANT;
+		if(friendly)bounce *= GamePanel.BOUNCE_CONSTANT_FRIENDLY;
+		if(related)bounce *= GamePanel.BOUNCE_CONSTANT_RELATED;
 		Float64Vector diff = position.minus(other.position);
-		diff = GamePanel.directionOf(diff).times(GamePanel.BOUNCE_CONSTANT*Math.pow(radius+other.radius-diff.normValue(),2)*dtime);
+		diff = GamePanel.directionOf(diff).times(bounce*Math.pow(radius+other.radius-diff.normValue(),2)*dtime);
 		velocity = velocity.plus(diff.times(1d/mass));
 		other.velocity = other.velocity.plus(diff.times(-1d/other.mass));
 	}
@@ -219,6 +232,7 @@ public class GameObject {
 		parent = other;
 		team = other.team;
 		colorOverride = null;
+		density = 1;
 		type = "shot";
 		subtype = "drone";
 		controllable = true;
@@ -228,7 +242,7 @@ public class GameObject {
 	}
 	
 	public void updateStats(){
-		damage = 1+0.3*stats[2];
+		damage = 1+0.5*stats[2];
 		maxHealth = 1+level*0.04+0.2*stats[1];
 		density = 1+0.2*stats[1];
 		decay = -0.001*Math.pow(1+0.5*stats[0],2)*maxHealth;
@@ -281,8 +295,7 @@ public class GameObject {
 		density *= densityMul;
 		updateProperties(false, false, false, true);
 		double accelFirst = turrets.isEmpty()?1:turrets.get(0).acceleration.normValue()*getBulletAccel();
-		double droneCounter = this.droneCounter;
-		if(subtype.equals("necro"))droneCounter *= getReload();// reload reduces drone speed penalty
+		double droneCounter = this.droneCounter*Math.pow(getReload(), 2);// reload reduces drone speed penalty
 		double oDroneCounter = droneCounter;
 		for(GameObject child:children){
 			if(child.controllable){

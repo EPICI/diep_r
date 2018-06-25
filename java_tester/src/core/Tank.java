@@ -27,17 +27,16 @@ public class Tank extends GameObject {
 		case "battleship":return 14;
 		case "pentashot":return 15;
 		case "skimmer":return 16;
-		case "fighter":return 17;
-		case "spike":return 18;
-		case "ranger":return 19;
-		case "necro":return 20;
+		case "spike":return 17;
+		case "ranger":return 18;
+		case "necro":return 19;
 		}
 		return -1;
 	}
 	
 	public static void initTank(GamePanel panel,GameObject tank,int type){
 		if(panel==null)panel = tank.getRoot();
-		if(type==-1)type=panel.random.nextInt(21);
+		if(type==-1)type=panel.random.nextInt(20);
 		switch(type){
 		case 0:initTank(panel,tank);break;
 		case 1:initSpammer(tank);break;
@@ -56,10 +55,9 @@ public class Tank extends GameObject {
 		case 14:initBattleship(tank);break;
 		case 15:initPentashot(tank);break;
 		case 16:initSkimmer(tank);break;
-		case 17:initFighter(tank);break;
-		case 18:initSpike(tank);break;
-		case 19:initRanger(tank);break;
-		case 20:initNecro(tank);break;
+		case 17:initSpike(tank);break;
+		case 18:initRanger(tank);break;
+		case 19:initNecro(tank);break;
 		}
 	}
 	
@@ -332,7 +330,7 @@ public class Tank extends GameObject {
 	
 	public static void initOverlord(GameObject tank){
 		tank.subtype = "overlord";
-		tank.droneCounter = 4;
+		tank.droneCounter = 2;
 		Turret turret = new Turret();
 		tank.turrets.clear();
 		tank.turrets.add(turret);
@@ -341,7 +339,7 @@ public class Tank extends GameObject {
 		turret.multiplier = 1.0;
 		turret.radius = 0.5;
 		turret.velocity = Float64Vector.valueOf(VELOCITY,0);
-		turret.acceleration = Float64Vector.valueOf(50,0);
+		turret.acceleration = Float64Vector.valueOf(40,0);
 		turret.density = 1;
 		turret.damage = 1;
 		turret.health = 1;
@@ -542,44 +540,6 @@ public class Tank extends GameObject {
 		turret.setShape(2.5, 1.6, 0.4);
 	}
 	
-	public static void initFighter(GameObject tank){
-		tank.subtype = "fighter";
-		Turret turret = new Turret();
-		tank.turrets.clear();
-		tank.turrets.add(turret);
-		turret.parent = tank;
-		turret.lastUpdated = tank.lastUpdated;
-		turret.multiplier = 1.6;
-		turret.radius = 0.5;
-		turret.velocity = Float64Vector.valueOf(VELOCITY,0);
-		turret.acceleration = Float64Vector.valueOf(130,0);
-		turret.density = 1;
-		turret.damage = 0.9;
-		turret.health = 0.9;
-		turret.decay = 0.8;
-		turret.setShape(2, 1);
-		turret = Turret.copy(turret);
-		tank.turrets.add(turret);
-		turret.rotation = Math.PI/2;
-		turret.delay = 0.5;
-		turret.damage = 0.7;
-		turret.health = 0.7;
-		turret.setShape(1.7, 1);
-		turret = Turret.copy(turret);
-		tank.turrets.add(turret);
-		turret.rotation = -turret.rotation;
-		turret = Turret.copy(turret);
-		tank.turrets.add(0,turret);
-		turret.rotation = Math.PI*5/6;
-		turret.velocity = Float64Vector.valueOf(VELOCITY*5,0);
-		turret.delay = 0;
-		turret.damage = 0.5;
-		turret.health = 0.5;
-		turret = Turret.copy(turret);
-		tank.turrets.add(0,turret);
-		turret.rotation = -turret.rotation;
-	}
-	
 	public static void initSpike(GameObject tank){
 		tank.subtype = "spike";
 		Turret turret = new Turret();
@@ -612,7 +572,7 @@ public class Tank extends GameObject {
 	
 	public static void initNecro(GameObject tank){
 		tank.subtype = "necro";
-		tank.droneCounter = 2;
+		tank.droneCounter = 1;
 		Turret turret = new Turret();
 		tank.turrets.clear();
 		tank.turrets.add(turret);

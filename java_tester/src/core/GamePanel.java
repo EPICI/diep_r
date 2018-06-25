@@ -14,6 +14,8 @@ public class GamePanel extends JPanel {
 	
 	public static final double DRAG_CONSTANT = 1;
 	public static final double FRICTION_CONSTANT = 10;
+	public static final double BOUNCE_CONSTANT_FRIENDLY = 0.1;
+	public static final double BOUNCE_CONSTANT_RELATED = 0.1;
 	public static final double BOUNCE_CONSTANT = 1000;
 	public static final double DAMAGE_CONSTANT = 5;
 	
@@ -194,6 +196,9 @@ public class GamePanel extends JPanel {
 				case KeyEvent.VK_H:{
 					// rapid healing
 					player.lastHit -= 60;
+					for(GameObject child:player.children){
+						if(child.subtype.equals("drone"))child.lastHit -= 60;
+					}
 					break;
 				}
 				case KeyEvent.VK_L:{
@@ -279,8 +284,7 @@ public class GamePanel extends JPanel {
 							}
 						}else if(player.subtype.equals("booster")){
 							switch(upgrade){
-							case 0:Tank.initFighter(player);break;
-							case 1:Tank.initSpike(player);break;
+							case 0:Tank.initSpike(player);break;
 							}
 						}else if(player.subtype.equals("overlord")){
 							switch(upgrade){
@@ -330,7 +334,7 @@ public class GamePanel extends JPanel {
 		double result = 80+0.5*tank.level;
 		switch(tank.subtype){
 		case "sniper":result*=1.1;break;
-		case "ranger":result*=1.5-0.5*Math.exp(-0.1*(tank.stillBonus-1));break;
+		case "ranger":result*=0.8+0.8*logistic(tank.stillBonus-5.0);break;
 		}
 		return result;
 	}
@@ -495,6 +499,10 @@ public class GamePanel extends JPanel {
 	
 	public static double bezier(double a,double b,double t){
 		return a+(b-a)*t;
+	}
+	
+	public static double logistic(double t){
+		return 1/(1+Math.exp(-t));
 	}
 	
 }

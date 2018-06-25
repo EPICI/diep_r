@@ -197,7 +197,7 @@ public class Turret {
 	
 	public void initShot(GameObject bullet,double time,double over){
 		double scale = parent.radius;
-		double protation = parent.rotation+rotation+sweep*(time-parent.timeCreated);
+		double protation = parent.rotation+(sweep==0?rotation:0);
 		double lrotation = protation+Math.PI*2*spread*Math.sin(Math.PI*2*spreadMul*shots);
 		double bspeed = parent.getBulletAccel();
 		Float64Vector protate = GamePanel.polar(1, protation);
@@ -206,7 +206,7 @@ public class Turret {
 		bullet.colorOverride = parent.colorOverride;
 		bullet.radius = (radius+radiusOver*over)*scale;
 		bullet.position = GamePanel.complexMultiply(protate, position).times(scale).plus(parent.position);
-		bullet.velocity = GamePanel.complexMultiply(lrotate, velocity).times((1+velocityOver*over)*bspeed*bspeed).plus(parent.velocity);
+		bullet.velocity = GamePanel.complexMultiply(lrotate, velocity).times((1+velocityOver*over)*bspeed*bspeed);
 		bullet.acceleration = GamePanel.complexMultiply(lrotate, acceleration).times((1+accelerationOver*over)*bspeed);
 		bullet.maxAcceleration = bullet.acceleration.normValue();
 		bullet.rotation = lrotation;
