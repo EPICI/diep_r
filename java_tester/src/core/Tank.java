@@ -369,22 +369,23 @@ public class Tank extends GameObject {
 		tank.turrets.add(turret);
 		turret.parent = tank;
 		turret.lastUpdated = tank.lastUpdated;
-		turret.multiplier = 3.5;
+		turret.multiplier = 3.6;
 		turret.radius = 0.6;
 		turret.velocity = Float64Vector.valueOf(VELOCITY,0);
 		turret.acceleration = Float64Vector.valueOf(130,0);
 		turret.density = 0.5;
-		turret.damage = 0.25;
-		turret.health = 0.9;
+		turret.damage = 0.15;
+		turret.health = 0.8;
 		turret.decay = 0.4;
 		turret.setShape(1.8, 1.2);
 		turret = Turret.copy(turret);
 		tank.turrets.add(0,turret);
-		turret.multiplier = 2.5;
+		turret.multiplier = 1.8;
 		turret.radius = 0.4;
-		turret.acceleration = Float64Vector.valueOf(200,0);
-		turret.damage = 0.65;
-		turret.health = 0.5;
+		turret.density = 0.8;
+		turret.damage = 1.1;
+		turret.health = 0.6;
+		turret.delay = 1d/4;
 		turret.setShape(2, 0.8);
 	}
 	
