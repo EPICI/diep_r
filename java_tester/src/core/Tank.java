@@ -14,50 +14,48 @@ public class Tank extends GameObject {
 		case "spammer":return 1;
 		case "heavy":return 2;
 		case "triangle":return 3;
-		case "twin":return 4;
-		case "trishot":return 5;
-		case "quad":return 6;
-		case "destroyer":return 7;
-		case "sniper":return 8;
-		case "trapper":return 9;
-		case "booster":return 10;
-		case "overlord":return 11;
-		case "triplet":return 12;
-		case "stream":return 13;
-		case "battleship":return 14;
-		case "pentashot":return 15;
-		case "skimmer":return 16;
-		case "spike":return 17;
-		case "ranger":return 18;
-		case "necro":return 19;
+		case "trishot":return 4;
+		case "quad":return 5;
+		case "destroyer":return 6;
+		case "sniper":return 7;
+		case "trapper":return 8;
+		case "booster":return 9;
+		case "overlord":return 10;
+		case "triplet":return 11;
+		case "stream":return 12;
+		case "battleship":return 13;
+		case "pentashot":return 14;
+		case "skimmer":return 15;
+		case "spike":return 16;
+		case "ranger":return 17;
+		case "necro":return 18;
 		}
 		return -1;
 	}
 	
 	public static void initTank(GamePanel panel,GameObject tank,int type){
 		if(panel==null)panel = tank.getRoot();
-		if(type==-1)type=panel.random.nextInt(20);
+		if(type==-1)type=panel.random.nextInt(19);
 		switch(type){
 		case 0:initTank(panel,tank);break;
 		case 1:initSpammer(tank);break;
 		case 2:initHeavy(tank);break;
 		case 3:initTriangle(tank);break;
-		case 4:initTwin(tank);break;
-		case 5:initTrishot(tank);break;
-		case 6:initQuad(tank);break;
-		case 7:initDestroyer(tank);break;
-		case 8:initSniper(tank);break;
-		case 9:initTrapper(tank);break;
-		case 10:initBooster(tank);break;
-		case 11:initOverlord(tank);break;
-		case 12:initTriplet(tank);break;
-		case 13:initStream(tank);break;
-		case 14:initBattleship(tank);break;
-		case 15:initPentashot(tank);break;
-		case 16:initSkimmer(tank);break;
-		case 17:initSpike(tank);break;
-		case 18:initRanger(tank);break;
-		case 19:initNecro(tank);break;
+		case 4:initTrishot(tank);break;
+		case 5:initQuad(tank);break;
+		case 6:initDestroyer(tank);break;
+		case 7:initSniper(tank);break;
+		case 8:initTrapper(tank);break;
+		case 9:initBooster(tank);break;
+		case 10:initOverlord(tank);break;
+		case 11:initTriplet(tank);break;
+		case 12:initStream(tank);break;
+		case 13:initBattleship(tank);break;
+		case 14:initPentashot(tank);break;
+		case 15:initSkimmer(tank);break;
+		case 16:initSpike(tank);break;
+		case 17:initRanger(tank);break;
+		case 18:initNecro(tank);break;
 		}
 	}
 	
@@ -151,28 +149,6 @@ public class Tank extends GameObject {
 		turret = Turret.copy(turret);
 		tank.turrets.add(turret);
 		turret.rotation = -turret.rotation;
-	}
-	
-	public static void initTwin(GameObject tank){
-		tank.subtype = "twin";
-		Turret turret = new Turret();
-		tank.turrets.clear();
-		tank.turrets.add(turret);
-		turret.parent = tank;
-		turret.lastUpdated = tank.lastUpdated;
-		turret.multiplier = 1.6;
-		turret.radius = 0.5;
-		turret.velocity = Float64Vector.valueOf(VELOCITY,0);
-		turret.acceleration = Float64Vector.valueOf(130,0);
-		turret.density = 0.5;
-		turret.damage = 0.7;
-		turret.health = 0.7;
-		turret.decay = 0.4;
-		turret.setShape(2, 1, 0, -0.5);
-		turret = Turret.copy(turret);
-		tank.turrets.add(turret);
-		turret.delay = 0.5;
-		turret.setShape(2, 1, 0, 0.5);
 	}
 	
 	public static void initTrishot(GameObject tank){
@@ -393,21 +369,23 @@ public class Tank extends GameObject {
 		tank.turrets.add(turret);
 		turret.parent = tank;
 		turret.lastUpdated = tank.lastUpdated;
-		turret.multiplier = 1.6;
-		turret.radius = 0.4;
+		turret.multiplier = 3.5;
+		turret.radius = 0.6;
 		turret.velocity = Float64Vector.valueOf(VELOCITY,0);
 		turret.acceleration = Float64Vector.valueOf(130,0);
 		turret.density = 0.5;
-		turret.damage = 0.45;
-		turret.health = 0.45;
+		turret.damage = 0.25;
+		turret.health = 0.9;
 		turret.decay = 0.4;
+		turret.setShape(1.8, 1.2);
+		turret = Turret.copy(turret);
+		tank.turrets.add(0,turret);
+		turret.multiplier = 2.5;
+		turret.radius = 0.4;
+		turret.acceleration = Float64Vector.valueOf(200,0);
+		turret.damage = 0.65;
+		turret.health = 0.5;
 		turret.setShape(2, 0.8);
-		for(int i=1;i<5;i++){
-			turret = Turret.copy(turret);
-			tank.turrets.add(turret);
-			turret.delay = 0.2*i;
-			turret.setShape(2-0.2*i, 0.8);
-		}
 	}
 	
 	public static void initBattleship(GameObject tank){

@@ -249,7 +249,7 @@ public class GamePanel extends JPanel {
 							}
 						}else if(player.subtype.equals("spammer")){
 							switch(upgrade){
-							case 0:Tank.initTwin(player);break;
+							case 0:Tank.initTriplet(player);break;
 							case 1:Tank.initTrishot(player);break;
 							case 2:Tank.initQuad(player);break;
 							}
@@ -264,11 +264,10 @@ public class GamePanel extends JPanel {
 							case 0:Tank.initBooster(player);break;
 							case 1:Tank.initOverlord(player);break;
 							}
-						}else if(player.subtype.equals("twin")){
+						}else if(player.subtype.equals("triplet")){
 							switch(upgrade){
-							case 0:Tank.initTriplet(player);break;
-							case 1:Tank.initStream(player);break;
-							case 2:Tank.initBattleship(player);break;
+							case 0:Tank.initStream(player);break;
+							case 1:Tank.initBattleship(player);break;
 							}
 						}else if(player.subtype.equals("trishot")){
 							switch(upgrade){
